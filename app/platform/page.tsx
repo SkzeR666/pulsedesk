@@ -18,6 +18,7 @@ import {
   Building2,
   CheckCircle2,
   KeyRound,
+  LogOut,
   Mail,
   Ticket,
   Users,
@@ -104,7 +105,7 @@ async function parseResponse(response: Response) {
 
 export default function PlatformPage() {
   const router = useRouter()
-  const { loading, isAuthenticated, platformAdmin, authUser } = useApp()
+  const { loading, isAuthenticated, platformAdmin, authUser, signOut } = useApp()
   const [data, setData] = useState<PlatformBundle | null>(null)
   const [isFetching, setIsFetching] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -220,9 +221,20 @@ export default function PlatformPage() {
               Controle global do produto, dos workspaces e dos acessos da plataforma.
             </p>
           </div>
-          <Badge variant="secondary" className="h-fit">
-            {authUser?.email}
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Badge variant="secondary" className="h-fit">
+              {authUser?.email}
+            </Badge>
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50"
+              onClick={() => void signOut()}
+            >
+              <LogOut className="h-4 w-4" />
+              Sair
+            </Button>
+          </div>
         </div>
 
         {error && (
