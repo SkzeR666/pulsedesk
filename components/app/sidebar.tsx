@@ -14,7 +14,9 @@ import {
   ShieldCheck,
   Plus,
   Search,
+  LogOut,
 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { WorkspaceSwitcher } from "./workspace-switcher"
 import { ProfileMenu } from "./profile-menu"
 
@@ -64,7 +66,7 @@ function NavRailItem({
 
 export function AppSidebar() {
   const pathname = usePathname()
-  const { user, platformAdmin, preferences, setIsCommandBarOpen, setIsNewRequestOpen, requests } = useApp()
+  const { user, platformAdmin, preferences, setIsCommandBarOpen, setIsNewRequestOpen, requests, signOut } = useApp()
   const compact = preferences.sidebarDensity === "compact"
 
   const openRequestsCount = requests.filter((r) => r.status === "open" || r.status === "in_progress").length
@@ -233,7 +235,35 @@ export function AppSidebar() {
           )}
         </ul>
 
-        <div className="border-t border-border pt-4">
+        <div className="border-t border-border pt-4 space-y-3">
+          {compact ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-14 w-full rounded-xl text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50"
+                  onClick={() => void signOut()}
+                >
+                  <LogOut className="h-[18px] w-[18px]" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right" sideOffset={10}>
+                Sair
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full justify-start rounded-xl text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50"
+              onClick={() => void signOut()}
+            >
+              <LogOut className="h-4 w-4" />
+              Sair
+            </Button>
+          )}
           <ProfileMenu user={user} compact={compact} />
         </div>
       </div>
