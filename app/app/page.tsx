@@ -48,11 +48,19 @@ export default function InboxPage() {
   })
 
   // Get selected request
-  const selectedRequest = requests.find((r) => r.id === selectedRequestId)
+  const selectedRequest = filteredRequests.find((r) => r.id === selectedRequestId) ?? null
 
-  // Auto-select first request if none selected
+  // Keep the detail panel in sync with the active filtered list.
   useEffect(() => {
-    if (!selectedRequestId && filteredRequests.length > 0) {
+    if (filteredRequests.length === 0) {
+      if (selectedRequestId) {
+        setSelectedRequestId(null)
+      }
+      return
+    }
+
+    const stillVisible = filteredRequests.some((request) => request.id === selectedRequestId)
+    if (!selectedRequestId || !stillVisible) {
       setSelectedRequestId(filteredRequests[0].id)
     }
   }, [selectedRequestId, filteredRequests, setSelectedRequestId])

@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useApp } from "@/lib/app-context"
 import {
   Bell,
   Building2,
@@ -14,12 +15,12 @@ import {
 
 const settingsNav = [
   { icon: Settings, label: "Geral", href: "/app/settings" },
-  { icon: Users, label: "Membros", href: "/app/settings/members" },
-  { icon: Building2, label: "Setores", href: "/app/settings/teams" },
-  { icon: Shield, label: "Permissoes", href: "/app/settings/permissions" },
+  { icon: Users, label: "Membros", href: "/app/settings/members", permission: "manageMembers" as const },
+  { icon: Building2, label: "Setores", href: "/app/settings/teams", permission: "manageMembers" as const },
+  { icon: Shield, label: "Permissoes", href: "/app/settings/permissions", permission: "manageSettings" as const },
   { icon: Palette, label: "Aparencia", href: "/app/settings/appearance" },
   { icon: Bell, label: "Notificacoes", href: "/app/settings/notifications" },
-  { icon: CreditCard, label: "Faturamento", href: "/app/settings/billing" },
+  { icon: CreditCard, label: "Faturamento", href: "/app/settings/billing", permission: "manageSettings" as const },
 ]
 
 export default function SettingsLayout({
@@ -28,6 +29,8 @@ export default function SettingsLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const { hasPermission } = useApp()
+  const visibleSettingsNav = settingsNav.filter((item) => !item.permission || hasPermission(item.permission))
 
   return (
     <div className="flex h-full">
@@ -37,7 +40,7 @@ export default function SettingsLayout({
           <p className="mt-1 text-sm text-muted-foreground">Ajustes da conta, operacao e workspace.</p>
         </div>
         <nav className="space-y-1">
-          {settingsNav.map((item) => {
+          {visibleSettingsNav.map((item) => {
             const isActive =
               pathname === item.href ||
               (item.href !== "/app/settings" && pathname.startsWith(item.href))

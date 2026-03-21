@@ -60,7 +60,10 @@ export function RequestDetail({ request }: RequestDetailProps) {
   const { updateRequest, addComment, user, users, teams, comments, hasPermission } = useApp()
   const [comment, setComment] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const canUpdateRequests = hasPermission("updateRequests")
+  const canUpdateRequests =
+    hasPermission("updateRequests") &&
+    (user.role === "admin" || request.requesterId === user.id || request.assigneeId === user.id)
+  const canChangeAssignee = hasPermission("updateRequests") && user.role === "admin"
 
   if (!user) {
     return null
@@ -333,7 +336,7 @@ export function RequestDetail({ request }: RequestDetailProps) {
             <Select
               value={request.assigneeId || "unassigned"}
               onValueChange={handleAssigneeChange}
-              disabled={!canUpdateRequests}
+              disabled={!canChangeAssignee}
             >
               <SelectTrigger className="mt-2 rounded-xl">
                 <SelectValue placeholder="Nao atribuido" />

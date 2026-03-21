@@ -79,9 +79,9 @@ export const DEFAULT_WORKSPACE_PERMISSION_SETTINGS: WorkspacePermissionSettings 
   member: {
     manageMembers: false,
     manageViews: true,
-    manageKnowledge: true,
+    manageKnowledge: false,
     manageSettings: false,
     updateRequests: true,
-    viewAllRequests: true,
+    viewAllRequests: false,
   },
 }

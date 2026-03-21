@@ -502,7 +502,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (!["INITIAL_SESSION", "SIGNED_IN", "SIGNED_OUT", "USER_UPDATED"].includes(event)) {
+        return
+      }
+
       void refreshData()
         .catch(() => {
           clearWorkspaceData()
@@ -676,18 +680,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addRequest = useCallback(
     async (payload: CreateRequestPayload) => {
-      await apiRequest("/api/requests", {
+      const createdRequest = await apiRequest<any>("/api/requests", {
         method: "POST",
         body: JSON.stringify(payload),
       })
-      await refreshData()
+      setRequests((current) => [mapRequest(createdRequest), ...current])
     },
-    [refreshData]
+    []
   )
 
   const updateRequest = useCallback(
     async (id: string, updates: Partial<Request>) => {
-      await apiRequest(`/api/requests/${id}`, {
+      const updatedRequest = await apiRequest<any>(`/api/requests/${id}`, {
         method: "PATCH",
         body: JSON.stringify({
           status: updates.status,
@@ -698,31 +702,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
           tags: updates.tags,
         }),
       })
-      await refreshData()
+      const mappedRequest = mapRequest(updatedRequest)
+      setRequests((current) =>
+        current.map((request) => (request.id === id ? mappedRequest : request))
+      )
     },
-    [refreshData]
+    []
   )
 
   const addComment = useCallback(
     async (requestId: string, content: string) => {
-      await apiRequest(`/api/requests/${requestId}/comments`, {
+      const createdComment = await apiRequest<any>(`/api/requests/${requestId}/comments`, {
         method: "POST",
         body: JSON.stringify({ content }),
       })
-      await refreshData()
+      setComments((current) => [...current, mapComment(createdComment)])
     },
-    [refreshData]
+    []
   )
 
   const createArticle = useCallback(
     async (payload: CreateArticlePayload) => {
-      await apiRequest("/api/articles", {
+      const createdArticle = await apiRequest<any>("/api/articles", {
         method: "POST",
         body: JSON.stringify(payload),
       })
-      await refreshData()
+      setArticles((current) => [mapArticle(createdArticle), ...current])
     },
-    [refreshData]
+    []
   )
 
   const createView = useCallback(
@@ -738,13 +745,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateArticle = useCallback(
     async (id: string, payload: CreateArticlePayload) => {
-      await apiRequest(`/api/articles/${id}`, {
+      const updatedArticle = await apiRequest<any>(`/api/articles/${id}`, {
         method: "PATCH",
         body: JSON.stringify(payload),
       })
-      await refreshData()
+      const mappedArticle = mapArticle(updatedArticle)
+      setArticles((current) =>
+        current.map((article) => (article.id === id ? mappedArticle : article))
+      )
     },
-    [refreshData]
+    []
   )
 
   const deleteArticle = useCallback(
@@ -752,9 +762,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       await apiRequest(`/api/articles/${id}`, {
         method: "DELETE",
       })
-      await refreshData()
+      setArticles((current) => current.filter((article) => article.id !== id))
     },
-    [refreshData]
+    []
   )
 
   const inviteMember = useCallback(
@@ -873,13 +883,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addGlobalMessage = useCallback(
     async (content: string) => {
-      await apiRequest("/api/chat/messages", {
+      const createdMessage = await apiRequest<any>("/api/chat/messages", {
         method: "POST",
         body: JSON.stringify({ content }),
       })
-      await refreshData()
+      setMessages((current) => [...current, mapWorkspaceMessage(createdMessage)])
     },
-    [refreshData]
+    []
   )
 
   const saveRolePermissions = useCallback(
