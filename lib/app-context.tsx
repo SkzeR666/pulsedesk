@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react"
@@ -332,6 +333,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isCommandBarOpen, setIsCommandBarOpen] = useState(false)
   const [isNewRequestOpen, setIsNewRequestOpen] = useState(false)
   const [activeView, setActiveView] = useState("inbox")
+  const realtimeRefreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const clearWorkspaceData = useCallback(() => {
     setPlatformAdmin(false)
@@ -483,6 +485,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [applyBundle, supabase])
 
+  const scheduleRealtimeRefresh = useCallback(() => {
+    if (realtimeRefreshTimeoutRef.current) {
+      clearTimeout(realtimeRefreshTimeoutRef.current)
+    }
+
+    realtimeRefreshTimeoutRef.current = setTimeout(() => {
+      void refreshData().catch(() => {
+        clearWorkspaceData()
+      })
+    }, 250)
+  }, [clearWorkspaceData, refreshData])
+
   useEffect(() => {
     let active = true
 
@@ -520,9 +534,125 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     return () => {
       active = false
+      if (realtimeRefreshTimeoutRef.current) {
+        clearTimeout(realtimeRefreshTimeoutRef.current)
+      }
       subscription.unsubscribe()
     }
-  }, [refreshData, supabase])
+  }, [clearWorkspaceData, refreshData, supabase])
+
+  useEffect(() => {
+    if (!authUser || !workspace?.id) {
+      return
+    }
+
+    const channel = supabase
+      .channel(`workspace-sync:${workspace.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "workspace_messages",
+          filter: `workspace_id=eq.${workspace.id}`,
+        },
+        scheduleRealtimeRefresh
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "requests",
+          filter: `workspace_id=eq.${workspace.id}`,
+        },
+        scheduleRealtimeRefresh
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "request_comments",
+        },
+        scheduleRealtimeRefresh
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "knowledge_articles",
+          filter: `workspace_id=eq.${workspace.id}`,
+        },
+        scheduleRealtimeRefresh
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "saved_views",
+          filter: `workspace_id=eq.${workspace.id}`,
+        },
+        scheduleRealtimeRefresh
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "workspace_invitations",
+          filter: `workspace_id=eq.${workspace.id}`,
+        },
+        scheduleRealtimeRefresh
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "workspace_members",
+          filter: `workspace_id=eq.${workspace.id}`,
+        },
+        scheduleRealtimeRefresh
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "teams",
+          filter: `workspace_id=eq.${workspace.id}`,
+        },
+        scheduleRealtimeRefresh
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "workspace_role_permissions",
+          filter: `workspace_id=eq.${workspace.id}`,
+        },
+        scheduleRealtimeRefresh
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "workspaces",
+          filter: `id=eq.${workspace.id}`,
+        },
+        scheduleRealtimeRefresh
+      )
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [authUser, scheduleRealtimeRefresh, supabase, workspace?.id])
 
   useEffect(() => {
     if (loading) return
