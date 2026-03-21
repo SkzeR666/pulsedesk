@@ -14,6 +14,17 @@ interface AccessCodeRow {
   max_uses: number
 }
 
+function isExistingUserError(message: string) {
+  const normalized = message.toLowerCase()
+  return (
+    normalized.includes("already been registered") ||
+    normalized.includes("user already registered") ||
+    normalized.includes("already registered") ||
+    normalized.includes("email address already in use") ||
+    normalized.includes("duplicate key value")
+  )
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.json()
   const name = String(body.name ?? "").trim()
@@ -66,8 +77,17 @@ export async function POST(request: NextRequest) {
   })
 
   if (createUserError || !createdUser.user) {
+    const message = createUserError?.message ?? "Nao foi possivel criar a conta."
+
+    if (isExistingUserError(message)) {
+      return NextResponse.json(
+        { error: "Esse email ja tem uma conta. Tente entrar com ele para acessar o workspace." },
+        { status: 400 }
+      )
+    }
+
     return NextResponse.json(
-      { error: createUserError?.message ?? "Nao foi possivel criar a conta." },
+      { error: message },
       { status: 400 }
     )
   }
@@ -83,12 +103,15 @@ export async function POST(request: NextRequest) {
     })
     createdWorkspaceId = bootstrapResult.workspace.id
 
-    const { error: redemptionError } = await (admin.from as any)("admin_access_code_redemptions").insert({
-      access_code_id: codeRow.id,
-      user_id: createdUser.user.id,
-      workspace_id: bootstrapResult.workspace.id,
-      redeemed_email: email,
-    })
+    const { error: redemptionError } = await (admin.from as any)("admin_access_code_redemptions").upsert(
+      {
+        access_code_id: codeRow.id,
+        user_id: createdUser.user.id,
+        workspace_id: bootstrapResult.workspace.id,
+        redeemed_email: email,
+      },
+      { onConflict: "access_code_id,user_id" }
+    )
 
     if (redemptionError) {
       throw redemptionError
