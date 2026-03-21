@@ -16,7 +16,7 @@ export async function PATCH(
 
   const { data: requestRows, error: requestError } = await supabase
     .from("requests")
-    .select("id, requester_id, assignee_id, workspace_id")
+    .select("id, requester_id, assignee_id, workspace_id, status")
     .eq("id", id)
     .eq("workspace_id", bundle.workspace.id)
     .limit(1)
@@ -41,11 +41,51 @@ export async function PATCH(
   }
 
   const payload: Record<string, unknown> = {}
-  if (body.status !== undefined) payload.status = body.status
-  if (body.priority !== undefined) payload.priority = body.priority
-  if (body.title !== undefined) payload.title = body.title
-  if (body.description !== undefined) payload.description = body.description
-  if (body.tags !== undefined) payload.tags = body.tags
+  const isResolvedRequest =
+    currentRequest.status === "resolved" || currentRequest.status === "closed"
+
+  if (body.status !== undefined) {
+    const nextStatus = String(body.status)
+    const isReopening = isResolvedRequest && nextStatus !== "resolved" && nextStatus !== "closed"
+
+    if (!isWorkspaceAdmin && isReopening) {
+      return NextResponse.json({ error: "Somente admins podem reabrir requests." }, { status: 403 })
+    }
+
+    payload.status = body.status
+  }
+
+  if (body.priority !== undefined) {
+    if (!isWorkspaceAdmin) {
+      return NextResponse.json({ error: "Somente admins podem alterar a prioridade." }, { status: 403 })
+    }
+
+    payload.priority = body.priority
+  }
+
+  if (body.title !== undefined) {
+    if (!isWorkspaceAdmin) {
+      return NextResponse.json({ error: "Somente admins podem editar o titulo." }, { status: 403 })
+    }
+
+    payload.title = body.title
+  }
+
+  if (body.description !== undefined) {
+    if (!isWorkspaceAdmin) {
+      return NextResponse.json({ error: "Somente admins podem editar a descricao." }, { status: 403 })
+    }
+
+    payload.description = body.description
+  }
+
+  if (body.tags !== undefined) {
+    if (!isWorkspaceAdmin) {
+      return NextResponse.json({ error: "Somente admins podem editar as tags." }, { status: 403 })
+    }
+
+    payload.tags = body.tags
+  }
 
   if (body.assigneeId !== undefined) {
     if (!isWorkspaceAdmin) {

@@ -39,6 +39,8 @@ export function NewRequestModal() {
   const [teamId, setTeamId] = useState("")
   const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent">("medium")
   const [tags, setTags] = useState("")
+  const isWorkspaceAdmin = user?.role === "admin"
+  const inheritedTeam = user?.teamId ? teams.find((team) => team.id === user.teamId) : null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,11 +51,11 @@ export function NewRequestModal() {
       title,
       description,
       status: "open",
-      priority,
+      priority: isWorkspaceAdmin ? priority : "medium",
       requesterId: user.id,
       assigneeId: null,
-      teamId,
-      tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
+      teamId: isWorkspaceAdmin ? teamId : user.teamId ?? "",
+      tags: isWorkspaceAdmin ? tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
     })
 
     setTitle("")
@@ -87,7 +89,9 @@ export function NewRequestModal() {
             <div>
               <DialogTitle className="text-xl">Novo request</DialogTitle>
               <DialogDescription>
-                Abra um request com setor, prioridade e contexto inicial.
+                {isWorkspaceAdmin
+                  ? "Abra um request com setor, prioridade e contexto inicial."
+                  : "Abra um request rapido com titulo e o que aconteceu."}
               </DialogDescription>
             </div>
           </div>
@@ -120,62 +124,73 @@ export function NewRequestModal() {
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                Equipe
-              </Label>
-              <Select value={teamId} onValueChange={setTeamId} required>
-                <SelectTrigger className="rounded-lg h-11 w-full">
-                  <SelectValue placeholder="Selecione..." />
-                </SelectTrigger>
-                <SelectContent className="rounded-lg">
-                  {teams.map((team) => (
-                    <SelectItem key={team.id} value={team.id} className="rounded-lg">
-                      {team.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {isWorkspaceAdmin ? (
+            <>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    Equipe
+                  </Label>
+                  <Select value={teamId} onValueChange={setTeamId} required>
+                    <SelectTrigger className="rounded-lg h-11 w-full">
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-lg">
+                      {teams.map((team) => (
+                        <SelectItem key={team.id} value={team.id} className="rounded-lg">
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-                Prioridade
-              </Label>
-              <Select value={priority} onValueChange={(v) => setPriority(v as typeof priority)}>
-                <SelectTrigger className="rounded-lg h-11 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-lg">
-                  {priorities.map((p) => (
-                    <SelectItem key={p.value} value={p.value} className="rounded-lg">
-                      <span className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${p.color.split(" ")[0].replace("100", "500")}`} />
-                        {p.label}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                    Prioridade
+                  </Label>
+                  <Select value={priority} onValueChange={(v) => setPriority(v as typeof priority)}>
+                    <SelectTrigger className="rounded-lg h-11 w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-lg">
+                      {priorities.map((p) => (
+                        <SelectItem key={p.value} value={p.value} className="rounded-lg">
+                          <span className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${p.color.split(" ")[0].replace("100", "500")}`} />
+                            {p.label}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="tags" className="text-sm font-medium flex items-center gap-2">
-              <Tag className="h-4 w-4 text-muted-foreground" />
-              Tags
-            </Label>
-            <Input
-              id="tags"
-              placeholder="Separadas por virgula: urgente, infraestrutura"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              className="rounded-xl h-11"
-            />
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="tags" className="text-sm font-medium flex items-center gap-2">
+                  <Tag className="h-4 w-4 text-muted-foreground" />
+                  Tags
+                </Label>
+                <Input
+                  id="tags"
+                  placeholder="Separadas por virgula: urgente, infraestrutura"
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  className="rounded-xl h-11"
+                />
+              </div>
+            </>
+          ) : (
+            <div className="rounded-xl border border-border bg-muted/30 p-4">
+              <p className="text-sm font-medium">Setor</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {inheritedTeam?.name ?? user?.team ?? "Nao vinculado"}
+              </p>
+            </div>
+          )}
           </div>
 
           <div className="flex justify-end gap-3 border-t border-border px-6 py-4">
@@ -189,7 +204,7 @@ export function NewRequestModal() {
             </Button>
             <Button 
               type="submit" 
-              disabled={isLoading || !title || !teamId}
+              disabled={isLoading || !title || (!isWorkspaceAdmin && !user?.teamId) || (isWorkspaceAdmin && !teamId)}
               className="rounded-lg min-w-[140px]"
             >
               {isLoading ? (

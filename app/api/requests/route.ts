@@ -9,6 +9,15 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json()
   const supabase = await getSupabaseServerClient()
+  const isWorkspaceAdmin = bundle.user?.role === "admin"
+  const inheritedTeamId = bundle.user?.teamId ?? bundle.membership?.team_id ?? null
+
+  if (!isWorkspaceAdmin && !inheritedTeamId) {
+    return NextResponse.json(
+      { error: "Seu usuario precisa estar vinculado a um setor para abrir requests." },
+      { status: 400 }
+    )
+  }
 
   const { error: insertError, data } = await supabase
     .from("requests")
@@ -16,12 +25,12 @@ export async function POST(request: NextRequest) {
       workspace_id: bundle.workspace.id,
       title: body.title,
       description: body.description ?? "",
-      status: body.status ?? "open",
-      priority: body.priority ?? "medium",
+      status: "open",
+      priority: isWorkspaceAdmin ? body.priority ?? "medium" : "medium",
       requester_id: bundle.authUser.id,
-      assignee_id: body.assigneeId ?? null,
-      team_id: body.teamId,
-      tags: body.tags ?? [],
+      assignee_id: isWorkspaceAdmin ? body.assigneeId ?? null : null,
+      team_id: isWorkspaceAdmin ? body.teamId : inheritedTeamId,
+      tags: isWorkspaceAdmin ? body.tags ?? [] : [],
     })
     .select()
     .limit(1)

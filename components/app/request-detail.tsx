@@ -60,14 +60,19 @@ export function RequestDetail({ request }: RequestDetailProps) {
   const { updateRequest, addComment, user, users, teams, comments, hasPermission } = useApp()
   const [comment, setComment] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const canUpdateRequests =
-    hasPermission("updateRequests") &&
-    (user.role === "admin" || request.requesterId === user.id || request.assigneeId === user.id)
-  const canChangeAssignee = hasPermission("updateRequests") && user.role === "admin"
 
   if (!user) {
     return null
   }
+
+  const isWorkspaceAdmin = user.role === "admin"
+  const canUpdateRequests =
+    hasPermission("updateRequests") &&
+    (isWorkspaceAdmin || request.requesterId === user.id || request.assigneeId === user.id)
+  const isResolved = request.status === "resolved" || request.status === "closed"
+  const canChangeStatus = canUpdateRequests && (isWorkspaceAdmin || !isResolved)
+  const canChangeAssignee = hasPermission("updateRequests") && isWorkspaceAdmin
+  const canChangePriority = hasPermission("updateRequests") && isWorkspaceAdmin
 
   const requester = users.find((item) => item.id === request.requesterId)
   const assignee = request.assigneeId ? users.find((item) => item.id === request.assigneeId) : null
@@ -105,8 +110,6 @@ export function RequestDetail({ request }: RequestDetailProps) {
     }
   }
 
-  const isResolved = request.status === "resolved" || request.status === "closed"
-
   return (
     <div className="flex h-full">
       {/* Main Content */}
@@ -131,12 +134,18 @@ export function RequestDetail({ request }: RequestDetailProps) {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {isResolved ? (
-                <Button size="sm" variant="outline" onClick={handleReopen} className="rounded-xl" disabled={!canUpdateRequests}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleReopen}
+                  className="rounded-xl"
+                  disabled={!isWorkspaceAdmin}
+                >
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Reabrir
                 </Button>
               ) : (
-                <Button size="sm" onClick={handleResolve} className="rounded-xl shadow-sm" disabled={!canUpdateRequests}>
+                <Button size="sm" onClick={handleResolve} className="rounded-xl shadow-sm" disabled={!canChangeStatus}>
                   <CheckCircle2 className="h-4 w-4 mr-2" />
                   Resolver
                 </Button>
@@ -151,7 +160,7 @@ export function RequestDetail({ request }: RequestDetailProps) {
                   <DropdownMenuItem
                     onClick={() => handleStatusChange("closed")}
                     className="rounded-lg"
-                    disabled={!canUpdateRequests}
+                    disabled={!canChangeStatus}
                   >
                     <XCircle className="h-4 w-4 mr-2" />
                     Fechar request
@@ -297,7 +306,7 @@ export function RequestDetail({ request }: RequestDetailProps) {
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               Status
             </label>
-            <Select value={request.status} onValueChange={handleStatusChange} disabled={!canUpdateRequests}>
+            <Select value={request.status} onValueChange={handleStatusChange} disabled={!canChangeStatus}>
               <SelectTrigger className="mt-2 rounded-xl">
                 <SelectValue />
               </SelectTrigger>
@@ -363,7 +372,7 @@ export function RequestDetail({ request }: RequestDetailProps) {
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               Prioridade
             </label>
-            <Select value={request.priority} onValueChange={handlePriorityChange} disabled={!canUpdateRequests}>
+            <Select value={request.priority} onValueChange={handlePriorityChange} disabled={!canChangePriority}>
               <SelectTrigger className="mt-2 rounded-xl">
                 <SelectValue />
               </SelectTrigger>
