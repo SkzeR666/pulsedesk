@@ -72,6 +72,8 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  let createdWorkspaceId: string | null = null
+
   try {
     const bootstrapResult = await bootstrapWorkspaceForUser({
       supabase: admin,
@@ -79,6 +81,7 @@ export async function POST(request: NextRequest) {
       workspaceName,
       displayName: name,
     })
+    createdWorkspaceId = bootstrapResult.workspace.id
 
     const { error: redemptionError } = await (admin.from as any)("admin_access_code_redemptions").insert({
       access_code_id: codeRow.id,
@@ -96,6 +99,10 @@ export async function POST(request: NextRequest) {
       workspaceId: bootstrapResult.workspace.id,
     })
   } catch (error) {
+    if (createdWorkspaceId) {
+      await admin.from("workspaces").delete().eq("id", createdWorkspaceId)
+    }
+
     await admin.auth.admin.deleteUser(createdUser.user.id)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Nao foi possivel ativar o workspace." },

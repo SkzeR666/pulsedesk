@@ -9,6 +9,7 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json()
   const supabase = await getSupabaseServerClient()
+  const assigneeFilter = body.assigneeId === "unassigned" ? null : body.assigneeId ?? null
 
   const { error: insertError, data } = await supabase
     .from("saved_views")
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
       team_id: body.teamId,
       statuses: body.statuses ?? [],
       priorities: body.priorities ?? [],
-      assignee_filter: body.assigneeId ?? null,
+      assignee_filter: assigneeFilter,
     })
     .select()
     .limit(1)

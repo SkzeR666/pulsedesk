@@ -255,6 +255,9 @@ function mapArticle(article: any): KnowledgeArticle {
 }
 
 function mapView(view: any): View {
+  const isUnassignedView =
+    !view.assignee_filter && view.team_id == null && view.icon === "user-x" && view.name === "Nao Atribuidos"
+
   return {
     id: view.id,
     workspaceId: view.workspace_id,
@@ -264,7 +267,7 @@ function mapView(view: any): View {
       status: view.statuses?.length ? view.statuses : undefined,
       priority: view.priorities?.length ? view.priorities : undefined,
       teamId: view.team_id ?? undefined,
-      assigneeId: view.assignee_filter ?? undefined,
+      assigneeId: isUnassignedView ? "unassigned" : view.assignee_filter ?? undefined,
     },
     isDefault: view.is_default,
   }

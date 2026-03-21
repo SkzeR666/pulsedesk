@@ -16,6 +16,14 @@ interface WorkspaceRow {
   id: string
 }
 
+function normalizeViewAssigneeFilter(assigneeId: string | undefined) {
+  if (!assigneeId || assigneeId === "unassigned") {
+    return null
+  }
+
+  return assigneeId
+}
+
 export async function bootstrapWorkspaceForUser({
   supabase,
   authUserId,
@@ -97,7 +105,7 @@ export async function bootstrapWorkspaceForUser({
       team_id: null,
       statuses: view.filter.status ?? [],
       priorities: view.filter.priority ?? [],
-      assignee_filter: view.filter.assigneeId ?? null,
+      assignee_filter: normalizeViewAssigneeFilter(view.filter.assigneeId),
       is_default: view.isDefault ?? false,
     })),
     ...teamViews,
@@ -105,7 +113,7 @@ export async function bootstrapWorkspaceForUser({
 
   const { error: viewsError } = await supabase.from("saved_views").insert(seedViews)
   if (viewsError) {
-    throw viewsError
+    throw new Error(`Nao foi possivel criar as views padrao: ${viewsError.message}`)
   }
 
   const { error: permissionsError } = await supabase.from("workspace_role_permissions").insert([
@@ -132,7 +140,7 @@ export async function bootstrapWorkspaceForUser({
   ])
 
   if (permissionsError) {
-    throw permissionsError
+    throw new Error(`Nao foi possivel configurar as permissoes iniciais: ${permissionsError.message}`)
   }
 
   return {
