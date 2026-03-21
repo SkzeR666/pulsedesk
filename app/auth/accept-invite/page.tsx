@@ -33,7 +33,7 @@ interface InvitationLookup {
 function AcceptInviteContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { acceptInvitation, authUser, refreshData } = useApp()
+  const { acceptInvitation, authUser, refreshData, updatePassword } = useApp()
   const supabase = useMemo(() => getSupabaseBrowserClient(), [])
   const [isLoading, setIsLoading] = useState(false)
   const [isFetching, setIsFetching] = useState(true)
@@ -41,6 +41,8 @@ function AcceptInviteContent() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [teamId, setTeamId] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
   const [lookup, setLookup] = useState<InvitationLookup | null>(null)
@@ -98,6 +100,7 @@ function AcceptInviteContent() {
       "",
     [invitation?.teams, invitation?.lockedTeamName, lockedTeam, teamId]
   )
+  const hasPasswordInput = password.trim().length > 0 || confirmPassword.trim().length > 0
 
   useEffect(() => {
     if (!authUser) return
@@ -181,6 +184,18 @@ function AcceptInviteContent() {
     setError("")
 
     try {
+      if (hasPasswordInput) {
+        if (password.length < 8) {
+          throw new Error("Defina uma senha com pelo menos 8 caracteres.")
+        }
+
+        if (password !== confirmPassword) {
+          throw new Error("A confirmacao da senha nao confere.")
+        }
+
+        await updatePassword(password)
+      }
+
       const destination = await acceptInvitation({
         token,
         name,
@@ -277,6 +292,36 @@ function AcceptInviteContent() {
               autoComplete="name"
             />
           </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="invite-password">Definir senha</Label>
+              <Input
+                id="invite-password"
+                type="password"
+                placeholder="Minimo 8 caracteres"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={8}
+                autoComplete="new-password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="invite-password-confirm">Confirmar senha</Label>
+              <Input
+                id="invite-password-confirm"
+                type="password"
+                placeholder="Repita a senha"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                minLength={8}
+                autoComplete="new-password"
+              />
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Defina uma senha agora para conseguir entrar depois pela tela normal de login.
+          </p>
 
           <div className="space-y-2">
             <Label>Setor</Label>
