@@ -171,40 +171,54 @@ export default function ViewsPage() {
       />
 
       <div className="flex min-h-0 flex-1">
-      <div className="w-64 border-r border-border p-4 overflow-auto shrink-0 bg-muted/20">
-        <div className="space-y-1.5">
+      <div className="w-72 border-r border-border overflow-auto shrink-0 bg-background">
+        <div className="border-b border-border px-5 py-4">
+          <p className="text-sm font-medium text-foreground">Colecoes</p>
+          <p className="mt-1 text-xs text-muted-foreground">Views salvas para triagem rapida.</p>
+        </div>
+
+        <div className="space-y-1 px-3 py-3">
           {views.map((view) => {
             const Icon = viewIcons[view.icon] || LayoutGrid
             const count = filterRequests(view.id).length
+            const isActive = activeViewId === view.id
 
             return (
               <div
                 key={view.id}
-                className={`flex items-center gap-2 rounded-lg px-2 py-1 transition-colors ${
-                  activeViewId === view.id
-                    ? "bg-background ring-1 ring-border"
-                    : "hover:bg-background/60"
+                className={`group flex items-center gap-2 border px-2 py-1.5 transition-colors ${
+                  isActive
+                    ? "border-border bg-muted/40"
+                    : "border-transparent hover:border-border/70 hover:bg-muted/20"
                 }`}
               >
                 <button
                   onClick={() => router.push(`/app/views?view=${view.id}`)}
-                  className={`flex min-w-0 flex-1 items-center justify-between rounded-md px-1 py-1.5 text-sm ${
-                    activeViewId === view.id
-                      ? "font-medium text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
+                  className={`flex min-w-0 flex-1 items-center justify-between gap-3 px-1 py-1 text-sm ${
+                    isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <span className="flex min-w-0 items-center gap-2">
-                    <Icon className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{view.name}</span>
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className={`flex h-8 w-8 items-center justify-center border ${
+                      isActive ? "border-border bg-background text-foreground" : "border-border/70 bg-muted/10 text-muted-foreground"
+                    }`}>
+                      <Icon className="h-4 w-4 shrink-0" />
+                    </span>
+                    <span className="truncate font-medium">{view.name}</span>
                   </span>
-                  <span className="text-xs opacity-70">{count}</span>
+                  <span className={`min-w-6 text-right text-xs tabular-nums ${isActive ? "text-foreground/80" : "text-muted-foreground"}`}>
+                    {count}
+                  </span>
                 </button>
 
                 {canManageViews && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={`h-8 w-8 rounded-md ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                      >
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>

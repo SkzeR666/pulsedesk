@@ -4,6 +4,28 @@ import { requireWorkspaceContext } from "@/lib/server/route-helpers"
 import { firstRow } from "@/lib/server/supabase-results"
 import { createOpenRouterChatCompletion } from "@/lib/server/openrouter"
 
+function parseSummaryPayload(rawSummary: string) {
+  const normalized = rawSummary
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim()
+
+  const parsed = JSON.parse(normalized) as {
+    context?: string
+    status?: string
+    attention?: string
+    nextStep?: string
+  }
+
+  return {
+    context: parsed.context?.trim() || "Sem contexto adicional.",
+    status: parsed.status?.trim() || "Sem status resumido.",
+    attention: parsed.attention?.trim() || "Sem ponto de atencao identificado.",
+    nextStep: parsed.nextStep?.trim() || "Sem proximo passo sugerido.",
+  }
+}
+
 export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -77,7 +99,7 @@ export async function POST(
       {
         role: "system",
         content:
-          "Voce resume tickets internos de suporte em portugues do Brasil. Responda com texto curto, objetivo e util. Inclua: contexto, status atual, pontos de atencao e proximo passo sugerido.",
+          'Voce resume tickets internos de suporte em portugues do Brasil. Responda apenas JSON valido, sem markdown, sem crases e sem texto extra. Formato obrigatorio: {"context":"...","status":"...","attention":"...","nextStep":"..."}',
       },
       {
         role: "user",
@@ -91,7 +113,7 @@ export async function POST(
       },
     ])
 
-    return NextResponse.json({ summary })
+    return NextResponse.json({ summary: parseSummaryPayload(summary) })
   } catch (summaryError) {
     return NextResponse.json(
       {

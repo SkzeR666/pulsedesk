@@ -791,6 +791,9 @@ for insert with check (public.is_workspace_member(workspace_id));
 create policy "views update member" on public.saved_views
 for update using (public.is_workspace_member(workspace_id)) with check (public.is_workspace_member(workspace_id));
 
+create policy "views delete member" on public.saved_views
+for delete using (public.is_workspace_member(workspace_id));
+
 create policy "invites select member" on public.workspace_invitations
 for select using (public.is_workspace_member(workspace_id));
 

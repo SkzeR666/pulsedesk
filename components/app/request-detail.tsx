@@ -45,6 +45,13 @@ interface RequestDetailProps {
   request: Request
 }
 
+interface RequestSummary {
+  context: string
+  status: string
+  attention: string
+  nextStep: string
+}
+
 const statuses: Request["status"][] = ["open", "in_progress", "waiting", "resolved", "closed"]
 const priorities: Request["priority"][] = ["low", "medium", "high", "urgent"]
 
@@ -59,7 +66,7 @@ export function RequestDetail({ request }: RequestDetailProps) {
   const { updateRequest, addComment, user, users, teams, comments, hasPermission } = useApp()
   const [comment, setComment] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [summary, setSummary] = useState("")
+  const [summary, setSummary] = useState<RequestSummary | null>(null)
   const [summaryError, setSummaryError] = useState("")
   const [isSummarizing, setIsSummarizing] = useState(false)
 
@@ -123,7 +130,7 @@ export function RequestDetail({ request }: RequestDetailProps) {
         throw new Error(data?.error ?? "Nao foi possivel resumir este ticket.")
       }
 
-      setSummary(data?.summary ?? "")
+      setSummary(data?.summary ?? null)
     } catch (error) {
       setSummaryError(error instanceof Error ? error.message : "Nao foi possivel resumir este ticket.")
     } finally {
@@ -132,7 +139,7 @@ export function RequestDetail({ request }: RequestDetailProps) {
   }
 
   useEffect(() => {
-    setSummary("")
+    setSummary(null)
     setSummaryError("")
     setIsSummarizing(false)
   }, [request.id])
@@ -204,8 +211,8 @@ export function RequestDetail({ request }: RequestDetailProps) {
             {request.description || "Sem descricao."}
           </p>
 
-          <div className="mt-4 rounded-2xl border border-border bg-muted/30 p-4">
-            <div className="flex items-center justify-between gap-3">
+          <div className="mt-5 border border-border bg-card">
+            <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
               <div>
                 <p className="text-sm font-medium">Resumo de contexto</p>
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -216,7 +223,7 @@ export function RequestDetail({ request }: RequestDetailProps) {
                 type="button"
                 size="sm"
                 variant="outline"
-                className="rounded-xl"
+                className="h-9 rounded-md"
                 onClick={() => void handleSummarize()}
                 disabled={isSummarizing}
               >
@@ -226,12 +233,26 @@ export function RequestDetail({ request }: RequestDetailProps) {
             </div>
 
             {summaryError ? (
-              <p className="mt-3 text-sm text-red-600">{summaryError}</p>
+              <p className="px-4 py-3 text-sm text-red-600">{summaryError}</p>
             ) : summary ? (
-              <div className="mt-3 rounded-xl bg-background p-3 text-sm leading-6 text-muted-foreground whitespace-pre-wrap">
-                {summary}
+              <div className="grid gap-px bg-border sm:grid-cols-2">
+                {[
+                  { label: "Contexto", value: summary.context },
+                  { label: "Status atual", value: summary.status },
+                  { label: "Pontos de atencao", value: summary.attention },
+                  { label: "Proximo passo", value: summary.nextStep },
+                ].map((item) => (
+                  <div key={item.label} className="bg-background px-4 py-4">
+                    <p className="text-xs font-medium text-muted-foreground">{item.label}</p>
+                    <p className="mt-2 text-sm leading-6 text-foreground/88">{item.value}</p>
+                  </div>
+                ))}
               </div>
-            ) : null}
+            ) : (
+              <div className="px-4 py-4 text-sm text-muted-foreground">
+                Gere um resumo quando quiser bater o olho no ticket sem ler tudo de novo.
+              </div>
+            )}
           </div>
           
           {/* Attachments Preview */}
