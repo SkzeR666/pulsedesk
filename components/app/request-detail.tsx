@@ -46,10 +46,8 @@ interface RequestDetailProps {
 }
 
 interface RequestSummary {
-  context: string
-  status: string
-  attention: string
-  nextStep: string
+  summary: string
+  suggestedReplies: string[]
 }
 
 const statuses: Request["status"][] = ["open", "in_progress", "waiting", "resolved", "closed"]
@@ -69,6 +67,7 @@ export function RequestDetail({ request }: RequestDetailProps) {
   const [summary, setSummary] = useState<RequestSummary | null>(null)
   const [summaryError, setSummaryError] = useState("")
   const [isSummarizing, setIsSummarizing] = useState(false)
+  const [showSuggestions, setShowSuggestions] = useState(true)
 
   if (!user) {
     return null
@@ -142,6 +141,7 @@ export function RequestDetail({ request }: RequestDetailProps) {
     setSummary(null)
     setSummaryError("")
     setIsSummarizing(false)
+    setShowSuggestions(true)
   }, [request.id])
 
   return (
@@ -235,18 +235,8 @@ export function RequestDetail({ request }: RequestDetailProps) {
             {summaryError ? (
               <p className="px-4 py-3 text-sm text-red-600">{summaryError}</p>
             ) : summary ? (
-              <div className="grid gap-px bg-border sm:grid-cols-2">
-                {[
-                  { label: "Contexto", value: summary.context },
-                  { label: "Status atual", value: summary.status },
-                  { label: "Pontos de atencao", value: summary.attention },
-                  { label: "Proximo passo", value: summary.nextStep },
-                ].map((item) => (
-                  <div key={item.label} className="bg-background px-4 py-4">
-                    <p className="text-xs font-medium text-muted-foreground">{item.label}</p>
-                    <p className="mt-2 text-sm leading-6 text-foreground/88">{item.value}</p>
-                  </div>
-                ))}
+              <div className="px-4 py-4">
+                <p className="text-sm leading-7 text-foreground/88">{summary.summary}</p>
               </div>
             ) : (
               <div className="px-4 py-4 text-sm text-muted-foreground">
@@ -338,6 +328,43 @@ export function RequestDetail({ request }: RequestDetailProps) {
               <AvatarFallback className="text-xs">{user.name[0]}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
+              {summary?.suggestedReplies?.length ? (
+                <div className="mb-3 border border-border bg-background">
+                  <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+                    <div>
+                      <p className="text-sm font-medium">Respostas sugeridas</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Escolha uma base pronta para responder mais rapido.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 rounded-md text-muted-foreground"
+                      onClick={() => setShowSuggestions((current) => !current)}
+                    >
+                      {showSuggestions ? "Nao quero agora" : "Mostrar respostas"}
+                    </Button>
+                  </div>
+
+                  {showSuggestions ? (
+                    <div className="space-y-2 p-3">
+                      {summary.suggestedReplies.map((reply, index) => (
+                        <button
+                          key={`${request.id}-reply-${index}`}
+                          type="button"
+                          onClick={() => setComment(reply)}
+                          className="w-full border border-border bg-card px-4 py-3 text-left transition-colors hover:bg-muted/35"
+                        >
+                          <p className="text-sm leading-6 text-foreground/88">{reply}</p>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
               <Textarea
                 placeholder="Escreva um comentario..."
                 value={comment}

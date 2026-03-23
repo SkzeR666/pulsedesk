@@ -12,17 +12,18 @@ function parseSummaryPayload(rawSummary: string) {
     .trim()
 
   const parsed = JSON.parse(normalized) as {
-    context?: string
-    status?: string
-    attention?: string
-    nextStep?: string
+    summary?: string
+    suggestedReplies?: string[]
   }
 
   return {
-    context: parsed.context?.trim() || "Sem contexto adicional.",
-    status: parsed.status?.trim() || "Sem status resumido.",
-    attention: parsed.attention?.trim() || "Sem ponto de atencao identificado.",
-    nextStep: parsed.nextStep?.trim() || "Sem proximo passo sugerido.",
+    summary:
+      parsed.summary?.trim() ||
+      "Este ticket ainda tem pouco contexto registrado, entao vale complementar a descricao para facilitar o atendimento.",
+    suggestedReplies: (parsed.suggestedReplies ?? [])
+      .map((reply) => reply.trim())
+      .filter(Boolean)
+      .slice(0, 3),
   }
 }
 
@@ -99,7 +100,7 @@ export async function POST(
       {
         role: "system",
         content:
-          'Voce resume tickets internos de suporte em portugues do Brasil. Responda apenas JSON valido, sem markdown, sem crases e sem texto extra. Formato obrigatorio: {"context":"...","status":"...","attention":"...","nextStep":"..."}',
+          'Voce ajuda times internos de suporte em portugues do Brasil. Responda apenas JSON valido, sem markdown, sem crases e sem texto extra. Formato obrigatorio: {"summary":"...","suggestedReplies":["...","...","..."]}. O campo summary deve ser um paragrafo natural, claro e curto. As respostas sugeridas devem ser prontas para colar no ticket, soar humanas e objetivas.',
       },
       {
         role: "user",
