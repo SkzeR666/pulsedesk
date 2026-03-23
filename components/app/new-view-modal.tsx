@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,10 +21,12 @@ import {
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import { useApp } from "@/lib/app-context"
+import type { View } from "@/lib/types"
 
 interface NewViewModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  initialView?: View | null
   onSubmit?: (data: ViewFormData) => void
 }
 
@@ -65,9 +67,10 @@ const priorities = [
 export function NewViewModal({
   open,
   onOpenChange,
+  initialView,
   onSubmit,
 }: NewViewModalProps) {
-  const { createView, teams } = useApp()
+  const { createView, updateView, teams } = useApp()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState<ViewFormData>({
     name: "",
@@ -77,11 +80,37 @@ export function NewViewModal({
     priorities: [],
   })
 
+  useEffect(() => {
+    if (!open) return
+
+    setFormData(
+      initialView
+        ? {
+            name: initialView.name,
+            icon: initialView.icon,
+            teamId: initialView.filter.teamId ?? null,
+            statuses: initialView.filter.status ?? [],
+            priorities: initialView.filter.priority ?? [],
+          }
+        : {
+            name: "",
+            icon: "inbox",
+            teamId: null,
+            statuses: [],
+            priorities: [],
+          }
+    )
+  }, [initialView, open])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
 
-    await createView(formData)
+    if (initialView) {
+      await updateView(initialView.id, formData)
+    } else {
+      await createView(formData)
+    }
 
     onSubmit?.(formData)
     setIsSubmitting(false)
@@ -113,9 +142,11 @@ export function NewViewModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="overflow-hidden p-0 sm:max-w-[640px]">
         <DialogHeader className="border-b border-border px-6 py-5">
-          <DialogTitle>Nova View</DialogTitle>
+          <DialogTitle>{initialView ? "Editar View" : "Nova View"}</DialogTitle>
           <DialogDescription>
-            Crie uma view personalizada com filtros especificos.
+            {initialView
+              ? "Atualize nome, icone e filtros da view."
+              : "Crie uma view personalizada com filtros especificos."}
           </DialogDescription>
         </DialogHeader>
 
@@ -226,7 +257,7 @@ export function NewViewModal({
             </Button>
             <Button type="submit" disabled={!isValid || isSubmitting}>
               {isSubmitting && <Spinner className="mr-2" />}
-              Criar view
+              {initialView ? "Salvar view" : "Criar view"}
             </Button>
           </div>
         </form>

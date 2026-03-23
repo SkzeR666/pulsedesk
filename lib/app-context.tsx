@@ -76,6 +76,7 @@ interface CreateViewPayload {
   teamId: string | null
   statuses: string[]
   priorities: string[]
+  assigneeId?: string | null
 }
 
 interface CreateArticlePayload {
@@ -137,6 +138,8 @@ interface AppContextType {
   updateArticle: (id: string, payload: CreateArticlePayload) => Promise<void>
   deleteArticle: (id: string) => Promise<void>
   createView: (payload: CreateViewPayload) => Promise<void>
+  updateView: (id: string, payload: CreateViewPayload) => Promise<void>
+  deleteView: (id: string) => Promise<void>
   inviteMember: (payload: InvitePayload) => Promise<InviteMemberResult>
   updateWorkspace: (payload: { name: string; description: string }) => Promise<void>
   updateProfile: (payload: { name: string; email: string; teamId?: string | null }) => Promise<void>
@@ -864,13 +867,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const createView = useCallback(
     async (payload: CreateViewPayload) => {
-      await apiRequest("/api/views", {
+      const createdView = await apiRequest<any>("/api/views", {
         method: "POST",
         body: JSON.stringify(payload),
       })
-      await refreshData()
+      setViews((current) => [...current, mapView(createdView)])
     },
-    [refreshData]
+    []
+  )
+
+  const updateView = useCallback(
+    async (id: string, payload: CreateViewPayload) => {
+      const updatedView = await apiRequest<any>(`/api/views/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      })
+      const mappedView = mapView(updatedView)
+      setViews((current) => current.map((view) => (view.id === id ? mappedView : view)))
+    },
+    []
+  )
+
+  const deleteView = useCallback(
+    async (id: string) => {
+      await apiRequest(`/api/views/${id}`, {
+        method: "DELETE",
+      })
+      setViews((current) => current.filter((view) => view.id !== id))
+    },
+    []
   )
 
   const updateArticle = useCallback(
@@ -1108,6 +1133,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updateArticle,
         deleteArticle,
         createView,
+        updateView,
+        deleteView,
         inviteMember,
         updateWorkspace,
         updateProfile,

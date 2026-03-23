@@ -8,6 +8,22 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { NewViewModal } from "@/components/app/new-view-modal"
 import { EmptyPanel, HeaderCountBadge, PageHeader, PageShell } from "@/components/app/page-shell"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { statusLabels, statusColors } from "@/lib/constants"
 import { formatDistanceToNow } from "@/lib/date-utils"
 import {
@@ -23,6 +39,9 @@ import {
   ChevronRight,
   Clock,
   Plus,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
 } from "lucide-react"
 
 const viewIcons: Record<string, React.ElementType> = {
@@ -39,11 +58,16 @@ const viewIcons: Record<string, React.ElementType> = {
 export default function ViewsPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { requests, views, users, teams, setSelectedRequestId } = useApp()
+  const { requests, views, users, teams, setSelectedRequestId, deleteView, hasPermission } = useApp()
   const [isNewViewOpen, setIsNewViewOpen] = useState(false)
+  const [editingViewId, setEditingViewId] = useState<string | null>(null)
+  const [deletingViewId, setDeletingViewId] = useState<string | null>(null)
+  const canManageViews = hasPermission("manageViews")
 
   const activeViewId = searchParams.get("view") || views[0]?.id
   const activeView = views.find((view) => view.id === activeViewId) || views[0]
+  const editingView = views.find((view) => view.id === editingViewId) ?? null
+  const deletingView = views.find((view) => view.id === deletingViewId) ?? null
 
   const filterRequests = (viewId: string) => {
     const view = views.find((item) => item.id === viewId)
@@ -65,6 +89,46 @@ export default function ViewsPage() {
     router.push("/app")
   }
 
+  const handleDeleteView = async () => {
+    if (!deletingView) return
+
+    const nextView = views.find((view) => view.id !== deletingView.id) ?? null
+    await deleteView(deletingView.id)
+    setDeletingViewId(null)
+
+    if (activeViewId === deletingView.id) {
+      router.push(nextView ? `/app/views?view=${nextView.id}` : "/app/views")
+    }
+  }
+
+  if (views.length === 0) {
+    return (
+      <PageShell>
+        <NewViewModal open={isNewViewOpen} onOpenChange={setIsNewViewOpen} />
+
+        <PageHeader
+          title="Views"
+          description="Colecoes salvas para acompanhar listas filtradas com menos atrito."
+          badge={<HeaderCountBadge>0 salvas</HeaderCountBadge>}
+          actions={
+            canManageViews ? (
+              <Button variant="outline" onClick={() => setIsNewViewOpen(true)}>
+                <Plus className="h-4 w-4" />
+                <span className="ml-2">Nova view</span>
+              </Button>
+            ) : null
+          }
+        />
+
+        <EmptyPanel
+          icon={<LayoutGrid className="h-6 w-6 text-muted-foreground" />}
+          title="Nenhuma view salva"
+          description="Crie a primeira view para organizar seus requests."
+        />
+      </PageShell>
+    )
+  }
+
   if (!activeView) {
     return null
   }
@@ -72,16 +136,37 @@ export default function ViewsPage() {
   return (
     <PageShell>
       <NewViewModal open={isNewViewOpen} onOpenChange={setIsNewViewOpen} />
+      <NewViewModal open={Boolean(editingView)} onOpenChange={(open) => !open && setEditingViewId(null)} initialView={editingView} />
+      <AlertDialog open={Boolean(deletingView)} onOpenChange={(open) => !open && setDeletingViewId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir view</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingView
+                ? `A view "${deletingView.name}" sera removida da workspace.`
+                : "Essa view sera removida da workspace."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void handleDeleteView()} className="bg-red-600 hover:bg-red-700">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <PageHeader
         title="Views"
         description="Colecoes salvas para acompanhar listas filtradas com menos atrito."
         badge={<HeaderCountBadge>{views.length} salvas</HeaderCountBadge>}
         actions={
-          <Button variant="outline" onClick={() => setIsNewViewOpen(true)}>
-            <Plus className="h-4 w-4" />
-            <span className="ml-2">Nova view</span>
-          </Button>
+          canManageViews ? (
+            <Button variant="outline" onClick={() => setIsNewViewOpen(true)}>
+              <Plus className="h-4 w-4" />
+              <span className="ml-2">Nova view</span>
+            </Button>
+          ) : null
         }
       />
 
@@ -93,21 +178,52 @@ export default function ViewsPage() {
             const count = filterRequests(view.id).length
 
             return (
-              <button
+              <div
                 key={view.id}
-                onClick={() => router.push(`/app/views?view=${view.id}`)}
-                className={`flex items-center justify-between w-full rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                className={`flex items-center gap-2 rounded-lg px-2 py-1 transition-colors ${
                   activeViewId === view.id
-                    ? "bg-background font-medium ring-1 ring-border"
-                    : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+                    ? "bg-background ring-1 ring-border"
+                    : "hover:bg-background/60"
                 }`}
               >
-                <span className="flex items-center gap-2">
-                  <Icon className="h-4 w-4" />
-                  {view.name}
-                </span>
-                <span className="text-xs opacity-70">{count}</span>
-              </button>
+                <button
+                  onClick={() => router.push(`/app/views?view=${view.id}`)}
+                  className={`flex min-w-0 flex-1 items-center justify-between rounded-md px-1 py-1.5 text-sm ${
+                    activeViewId === view.id
+                      ? "font-medium text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{view.name}</span>
+                  </span>
+                  <span className="text-xs opacity-70">{count}</span>
+                </button>
+
+                {canManageViews && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setEditingViewId(view.id)}>
+                        <Pencil className="h-4 w-4" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setDeletingViewId(view.id)}
+                        className="text-red-600 focus:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             )
           })}
         </div>
@@ -119,6 +235,14 @@ export default function ViewsPage() {
             <h2 className="text-lg font-semibold">{activeView.name}</h2>
             <Badge variant="secondary" className="rounded-md">{filteredRequests.length} requests</Badge>
           </div>
+          {canManageViews && (
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setEditingViewId(activeView.id)}>
+                <Pencil className="h-4 w-4" />
+                <span className="ml-2">Editar</span>
+              </Button>
+            </div>
+          )}
         </header>
 
         <div className="flex-1 overflow-auto">

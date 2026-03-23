@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import { useApp } from "@/lib/app-context"
-import { Sparkles, Send, Tag, Users, AlertTriangle } from "lucide-react"
+import { Sparkles, Send, Users, AlertTriangle } from "lucide-react"
 
 const priorities = [
   { value: "low", label: "Baixa", color: "bg-zinc-100 text-zinc-600" },
@@ -38,7 +38,6 @@ export function NewRequestModal() {
   const [description, setDescription] = useState("")
   const [teamId, setTeamId] = useState("")
   const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent">("medium")
-  const [tags, setTags] = useState("")
   const isWorkspaceAdmin = user?.role === "admin"
   const inheritedTeam = user?.teamId ? teams.find((team) => team.id === user.teamId) : null
 
@@ -55,14 +54,13 @@ export function NewRequestModal() {
       requesterId: user.id,
       assigneeId: null,
       teamId: isWorkspaceAdmin ? teamId : user.teamId ?? "",
-      tags: isWorkspaceAdmin ? tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
+      tags: [],
     })
 
     setTitle("")
     setDescription("")
     setTeamId("")
     setPriority("medium")
-    setTags("")
     setIsLoading(false)
     setIsNewRequestOpen(false)
   }
@@ -73,7 +71,6 @@ export function NewRequestModal() {
       setDescription("")
       setTeamId("")
       setPriority("medium")
-      setTags("")
     }
     setIsNewRequestOpen(open)
   }
@@ -167,20 +164,6 @@ export function NewRequestModal() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tags" className="text-sm font-medium flex items-center gap-2">
-                  <Tag className="h-4 w-4 text-muted-foreground" />
-                  Tags
-                </Label>
-                <Input
-                  id="tags"
-                  placeholder="Separadas por virgula: urgente, infraestrutura"
-                  value={tags}
-                  onChange={(e) => setTags(e.target.value)}
-                  className="rounded-xl h-11"
-                />
               </div>
             </>
           ) : (

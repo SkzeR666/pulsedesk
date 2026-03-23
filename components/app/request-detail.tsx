@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -28,8 +28,6 @@ import { formatDate, formatDistanceToNow } from "@/lib/date-utils"
 import {
   CheckCircle2,
   Clock,
-  Tag,
-  User,
   MessageSquare,
   Send,
   MoreHorizontal,
@@ -40,6 +38,7 @@ import {
   Users,
   Calendar,
   ArrowUpRight,
+  Sparkles,
 } from "lucide-react"
 
 interface RequestDetailProps {
@@ -60,6 +59,9 @@ export function RequestDetail({ request }: RequestDetailProps) {
   const { updateRequest, addComment, user, users, teams, comments, hasPermission } = useApp()
   const [comment, setComment] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [summary, setSummary] = useState("")
+  const [summaryError, setSummaryError] = useState("")
+  const [isSummarizing, setIsSummarizing] = useState(false)
 
   if (!user) {
     return null
@@ -75,7 +77,6 @@ export function RequestDetail({ request }: RequestDetailProps) {
   const canChangePriority = hasPermission("updateRequests") && isWorkspaceAdmin
 
   const requester = users.find((item) => item.id === request.requesterId)
-  const assignee = request.assigneeId ? users.find((item) => item.id === request.assigneeId) : null
   const team = teams.find((item) => item.id === request.teamId)
   const requestComments = comments.filter((item) => item.requestId === request.id)
 
@@ -109,6 +110,32 @@ export function RequestDetail({ request }: RequestDetailProps) {
       setIsSubmitting(false)
     }
   }
+
+  const handleSummarize = async () => {
+    setIsSummarizing(true)
+    setSummaryError("")
+
+    try {
+      const response = await fetch(`/api/requests/${request.id}/summary`, { method: "POST" })
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        throw new Error(data?.error ?? "Nao foi possivel resumir este ticket.")
+      }
+
+      setSummary(data?.summary ?? "")
+    } catch (error) {
+      setSummaryError(error instanceof Error ? error.message : "Nao foi possivel resumir este ticket.")
+    } finally {
+      setIsSummarizing(false)
+    }
+  }
+
+  useEffect(() => {
+    setSummary("")
+    setSummaryError("")
+    setIsSummarizing(false)
+  }, [request.id])
 
   return (
     <div className="flex h-full">
@@ -176,6 +203,36 @@ export function RequestDetail({ request }: RequestDetailProps) {
           <p className="text-muted-foreground leading-relaxed">
             {request.description || "Sem descricao."}
           </p>
+
+          <div className="mt-4 rounded-2xl border border-border bg-muted/30 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">Resumo de contexto</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Gera um panorama rapido do ticket com base na descricao e comentarios.
+                </p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => void handleSummarize()}
+                disabled={isSummarizing}
+              >
+                {isSummarizing ? <Spinner className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+                <span className="ml-2">{summary ? "Atualizar resumo" : "Resumir contexto"}</span>
+              </Button>
+            </div>
+
+            {summaryError ? (
+              <p className="mt-3 text-sm text-red-600">{summaryError}</p>
+            ) : summary ? (
+              <div className="mt-3 rounded-xl bg-background p-3 text-sm leading-6 text-muted-foreground whitespace-pre-wrap">
+                {summary}
+              </div>
+            ) : null}
+          </div>
           
           {/* Attachments Preview */}
           {request.attachments && request.attachments.length > 0 && (
@@ -399,28 +456,8 @@ export function RequestDetail({ request }: RequestDetailProps) {
             </div>
           </div>
 
-          {/* Tags */}
-          {request.tags.length > 0 && (
-            <div className="animate-fade-in opacity-0" style={{ animationDelay: "250ms" }}>
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Tags
-              </label>
-              <div className="flex items-center gap-2 mt-2 flex-wrap">
-                {request.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-background border border-border text-xs font-medium"
-                  >
-                    <Tag className="h-3 w-3 text-muted-foreground" />
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Timestamps */}
-          <div className="animate-fade-in opacity-0 pt-4 border-t border-border space-y-3" style={{ animationDelay: "300ms" }}>
+          <div className="animate-fade-in opacity-0 pt-4 border-t border-border space-y-3" style={{ animationDelay: "250ms" }}>
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
