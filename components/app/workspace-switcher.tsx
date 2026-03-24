@@ -26,7 +26,7 @@ export function WorkspaceSwitcher({ compact = false }: WorkspaceSwitcherProps) {
 
   const workspaceMark = workspace.logoUrl ? (
     <div
-      className={`flex items-center justify-center overflow-hidden rounded-xl bg-card ${
+      className={`flex items-center justify-center overflow-hidden rounded-xl bg-card ring-1 ring-border/60 ${
         compact ? "relative h-full w-full p-0" : "relative h-9 w-9 p-0"
       }`}
     >
@@ -35,7 +35,7 @@ export function WorkspaceSwitcher({ compact = false }: WorkspaceSwitcherProps) {
         alt={workspace.name}
         fill
         sizes={compact ? "88px" : "36px"}
-        className={compact ? "object-cover" : "object-contain p-2"}
+        className="object-cover"
       />
     </div>
   ) : (

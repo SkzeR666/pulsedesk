@@ -63,8 +63,8 @@ function NavRailItem({
 
 export function AppSidebar() {
   const pathname = usePathname()
-  const { user, platformAdmin, preferences, setIsCommandBarOpen, setIsNewRequestOpen, requests } = useApp()
-  const compact = preferences.sidebarDensity === "compact"
+  const { user, platformAdmin, setIsCommandBarOpen, setIsNewRequestOpen, requests } = useApp()
+  const compact = false
 
   const openRequestsCount = requests.filter((r) => r.status === "open" || r.status === "in_progress").length
   const myTasksCount = requests.filter(
