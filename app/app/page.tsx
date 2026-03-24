@@ -8,6 +8,13 @@ import { RequestDetail } from "@/components/app/request-detail"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { NewViewModal } from "@/components/app/new-view-modal"
 import {
   AlertDialog,
@@ -25,12 +32,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Search, X, MoreHorizontal, Pencil, Trash2, Plus } from "lucide-react"
+import { Search, X, MoreHorizontal, Pencil, Trash2, Plus, SlidersHorizontal } from "lucide-react"
 import type { Request } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 type StatusFilter = Request["status"] | "all"
-type PriorityFilter = Request["priority"] | "all"
 type ScopeFilter = "all" | "mine" | "waiting" | "recent"
 
 export default function InboxPage() {
@@ -50,7 +56,6 @@ export default function InboxPage() {
     (searchParams.get("scope") as ScopeFilter | null) ?? "all"
   )
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
-  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all")
   const [showDetail, setShowDetail] = useState(false)
   const [isNewViewOpen, setIsNewViewOpen] = useState(false)
   const [editingViewId, setEditingViewId] = useState<string | null>(null)
@@ -81,13 +86,13 @@ export default function InboxPage() {
   }
 
   const filteredRequests = useMemo(() => {
-    const scopedRequests = requests.filter((r) => {
+    const scopedRequests = requests.filter((request) => {
       if (scopeFilter === "mine") {
-        return r.assigneeId === user?.id && r.status !== "resolved" && r.status !== "closed"
+        return request.assigneeId === user?.id && request.status !== "resolved" && request.status !== "closed"
       }
 
       if (scopeFilter === "waiting") {
-        return r.requesterId === user?.id && r.status === "waiting"
+        return request.requesterId === user?.id && request.status === "waiting"
       }
 
       return true
@@ -96,23 +101,22 @@ export default function InboxPage() {
     const baseRequests =
       scopeFilter === "recent"
         ? [...scopedRequests]
-            .filter((r) => r.assigneeId === user?.id || r.requesterId === user?.id)
+            .filter((request) => request.assigneeId === user?.id || request.requesterId === user?.id)
             .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
             .slice(0, 10)
         : scopedRequests
 
-    return baseRequests.filter((r) => {
-      const matchesView = filterByView(r)
+    return baseRequests.filter((request) => {
+      const matchesView = filterByView(request)
       const matchesSearch =
-        r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.description.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesStatus = statusFilter === "all" || r.status === statusFilter
-      const matchesPriority = priorityFilter === "all" || r.priority === priorityFilter
-      return matchesView && matchesSearch && matchesStatus && matchesPriority
+        request.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        request.description.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesStatus = statusFilter === "all" || request.status === statusFilter
+      return matchesView && matchesSearch && matchesStatus
     })
-  }, [activeViewId, priorityFilter, requests, scopeFilter, searchQuery, statusFilter, user?.id, views])
+  }, [requests, scopeFilter, searchQuery, statusFilter, user?.id, views, activeView])
 
-  const selectedRequest = requests.find((r) => r.id === selectedRequestId) ?? null
+  const selectedRequest = requests.find((request) => request.id === selectedRequestId) ?? null
 
   useEffect(() => {
     const nextScope = (searchParams.get("scope") as ScopeFilter | null) ?? "all"
@@ -156,6 +160,23 @@ export default function InboxPage() {
     }
   }
 
+  const handleScopeChange = (value: ScopeFilter) => {
+    setScopeFilter(value)
+    const params = new URLSearchParams(searchParams.toString())
+    if (value === "all") {
+      params.delete("scope")
+    } else {
+      params.set("scope", value)
+    }
+    router.push(params.toString() ? `/app?${params.toString()}` : "/app")
+  }
+
+  const clearFilters = () => {
+    setSearchQuery("")
+    setStatusFilter("all")
+    handleScopeChange("all")
+  }
+
   return (
     <div className="flex h-dvh min-w-0">
       <NewViewModal open={isNewViewOpen} onOpenChange={setIsNewViewOpen} />
@@ -183,7 +204,6 @@ export default function InboxPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Left: list */}
       <section className="flex w-full flex-col border-r border-border/60 md:w-[420px]">
         <header className="shrink-0 bg-background px-4 py-4">
           <div className="flex items-start justify-between gap-3">
@@ -220,7 +240,12 @@ export default function InboxPage() {
                         onClick={() => router.push(`/app?view=${view.id}`)}
                         className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm"
                       >
-                        <span className={cn("whitespace-nowrap", isActive ? "font-medium text-foreground" : "text-muted-foreground")}>
+                        <span
+                          className={cn(
+                            "whitespace-nowrap",
+                            isActive ? "font-medium text-foreground" : "text-muted-foreground"
+                          )}
+                        >
                           {view.name}
                         </span>
                         <span className="rounded-full bg-muted px-1.5 py-0.5 text-[11px] tabular-nums text-muted-foreground">
@@ -279,9 +304,9 @@ export default function InboxPage() {
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Buscar por título ou descrição..."
+                placeholder="Buscar por titulo ou descricao..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(event) => setSearchQuery(event.target.value)}
                 className="pl-9"
               />
               {searchQuery ? (
@@ -289,61 +314,50 @@ export default function InboxPage() {
                   type="button"
                   aria-label="Limpar busca"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                  className="absolute right-2 top-1/2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
                   <X className="h-4 w-4" />
                 </button>
               ) : null}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              {([
-                { value: "all", label: "Todos" },
-                { value: "mine", label: "Atribuidos a mim" },
-                { value: "waiting", label: "Aguardando resposta" },
-                { value: "recent", label: "Recentes" },
-              ] as const).map((item) => (
-                <Button
-                  key={item.value}
-                  type="button"
-                  variant={scopeFilter === item.value ? "secondary" : "ghost"}
-                  size="sm"
-                  className={cn("px-2.5", scopeFilter === item.value && "bg-muted text-foreground")}
-                  onClick={() => {
-                    const params = new URLSearchParams(searchParams.toString())
-                    if (item.value === "all") {
-                      params.delete("scope")
-                    } else {
-                      params.set("scope", item.value)
-                    }
-                    router.push(params.toString() ? `/app?${params.toString()}` : "/app")
-                  }}
-                >
-                  {item.label}
-                </Button>
-              ))}
-            </div>
+            <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 p-2">
+              <div className="inline-flex items-center gap-2 px-2 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                Filtros
+              </div>
+              <div className="grid flex-1 grid-cols-1 gap-2 md:grid-cols-2">
+                <Select value={scopeFilter} onValueChange={(value) => handleScopeChange(value as ScopeFilter)}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Escopo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="mine">Atribuidos a mim</SelectItem>
+                    <SelectItem value="waiting">Aguardando resposta</SelectItem>
+                    <SelectItem value="recent">Recentes</SelectItem>
+                  </SelectContent>
+                </Select>
 
-            <div className="flex flex-wrap items-center gap-2">
-              {([
-                { value: "all", label: "Todos" },
-                { value: "open", label: "Abertos" },
-                { value: "in_progress", label: "Em andamento" },
-              ] as const).map((item) => (
-                <Button
-                  key={item.value}
-                  type="button"
-                  variant={statusFilter === item.value ? "secondary" : "ghost"}
-                  size="sm"
-                  className={cn(
-                    "px-2.5",
-                    statusFilter === item.value && "bg-muted text-foreground"
-                  )}
-                  onClick={() => setStatusFilter(item.value as StatusFilter)}
-                >
-                  {item.label}
+                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os status</SelectItem>
+                    <SelectItem value="open">Abertos</SelectItem>
+                    <SelectItem value="in_progress">Em andamento</SelectItem>
+                    <SelectItem value="waiting">Aguardando</SelectItem>
+                    <SelectItem value="resolved">Resolvidos</SelectItem>
+                    <SelectItem value="closed">Fechados</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {scopeFilter !== "all" || statusFilter !== "all" || searchQuery ? (
+                <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={clearFilters}>
+                  Limpar
                 </Button>
-              ))}
+              ) : null}
             </div>
           </div>
         </header>
@@ -353,7 +367,6 @@ export default function InboxPage() {
         </div>
       </section>
 
-      {/* Right: detail */}
       <section className="hidden min-w-0 flex-1 md:flex">
         {selectedRequest ? (
           <div className="min-w-0 flex-1">
@@ -371,7 +384,6 @@ export default function InboxPage() {
         )}
       </section>
 
-      {/* Mobile detail overlay (preserva comportamento atual de abrir/fechar) */}
       {selectedRequest && showDetail ? (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />

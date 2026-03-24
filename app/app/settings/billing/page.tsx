@@ -2,11 +2,10 @@
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { useApp } from "@/lib/app-context"
 import { PageContent, PageSection } from "@/components/app/page-shell"
-import { CreditCard, Users, FileText, Zap, CheckCircle2, Shield } from "lucide-react"
+import { CheckCircle2, FlaskConical, Shield, Sparkles, Zap } from "lucide-react"
 
 const plans = [
   {
@@ -15,7 +14,6 @@ const plans = [
     price: "R$ 0",
     period: "para sempre",
     features: ["5 membros", "100 requests/mes", "1 GB de armazenamento", "Base interna basica"],
-    current: true,
   },
   {
     id: "pro",
@@ -42,123 +40,111 @@ const plans = [
 ]
 
 export default function BillingPage() {
-  const { users, requests, articles, workspace, user } = useApp()
-  const memberUsage = users.length
-  const requestUsage = requests.length
-  const storageUsage = Math.min(100, articles.length * 5)
-  const adminCount = users.filter((member) => member.role === "admin").length
-  const usageHealth =
-    memberUsage > 5 || requestUsage > 100 ? "Acima da referencia do plano Free." : "Dentro da faixa operacional atual."
+  const { workspace, user } = useApp()
 
   return (
     <PageContent>
       <div className="mx-auto w-full max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-balance">Faturamento</h1>
-        <p className="text-muted-foreground mt-1">
-          Painel operacional do workspace. Billing automatico ainda nao esta conectado, mas os consumos abaixo usam dados reais.
-        </p>
-      </div>
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold tracking-tight text-balance">Faturamento</h1>
+          <p className="mt-1 text-muted-foreground">
+            Billing e medicao automatica estao pausados durante a fase de testes.
+          </p>
+        </div>
 
-      <div className="space-y-6">
-      <PageSection title="Plano atual">
-        <div className="rounded-lg border border-border p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-secondary">
-                <Zap className="h-5 w-5 text-foreground" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-lg">Free</h3>
-                  <Badge variant="secondary">Ativo</Badge>
+        <div className="space-y-6">
+          <PageSection title="Ambiente liberado">
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+                <div className="max-w-2xl">
+                  <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">
+                    <FlaskConical className="h-3.5 w-3.5" />
+                    Uso por hora pausado
+                  </div>
+                  <h2 className="text-xl font-semibold">Workspace pronto para homologacao</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {workspace?.name ?? "Este workspace"} esta sem bloqueios de plano, sem leitura de consumo
+                    para cobranca e com foco total em validacao operacional.
+                  </p>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {workspace?.name ?? "Workspace"} esta operando na camada padrao do produto.
-                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="secondary">Sem limites ativos</Badge>
+                  <Badge variant="secondary">Recursos liberados</Badge>
+                  <Badge variant="secondary">Checkout pausado</Badge>
+                </div>
               </div>
-            </div>
-            <Button disabled>{user?.role === "admin" ? "Checkout ainda nao conectado" : "Somente admins podem contratar"}</Button>
-          </div>
 
-          <div className="grid grid-cols-3 gap-6">
-            <div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                <Users className="h-4 w-4" />
-                Membros
+              <div className="mt-6 grid gap-4 md:grid-cols-3">
+                <div className="rounded-xl border border-border bg-background/60 p-4">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Zap className="h-4 w-4 text-primary" />
+                    Modo atual
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Operacao livre para testes internos e ajustes antes do billing real.
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border bg-background/60 p-4">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Shield className="h-4 w-4 text-primary" />
+                    Acessos
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Permissoes de membro ampliadas para acelerar QA e homologacao com o time.
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border bg-background/60 p-4">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    Futuro
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Reativar medicao e checkout apenas quando a camada comercial entrar em producao.
+                  </p>
+                </div>
               </div>
-              <p className="text-2xl font-bold">{memberUsage} / 5</p>
-              <Progress value={Math.min(100, (memberUsage / 5) * 100)} className="mt-2 h-2" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                <FileText className="h-4 w-4" />
-                Requests
-              </div>
-              <p className="text-2xl font-bold">{requestUsage} / 100</p>
-              <Progress value={Math.min(100, requestUsage)} className="mt-2 h-2" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                <CreditCard className="h-4 w-4" />
-                Base de conhecimento
-              </div>
-              <p className="text-2xl font-bold">{articles.length} artigos</p>
-              <Progress value={storageUsage} className="mt-2 h-2" />
-            </div>
-          </div>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-lg border border-border p-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Shield className="h-4 w-4" />
-                Admins do workspace
+              <div className="mt-6">
+                <Button disabled>
+                  {user?.role === "admin" ? "Billing pausado para testes" : "Somente admins gerenciam billing"}
+                </Button>
               </div>
-              <div className="mt-2 text-2xl font-semibold">{adminCount}</div>
             </div>
-            <div className="rounded-lg border border-border p-4 md:col-span-2">
-              <div className="text-sm font-medium">Saude operacional</div>
-              <p className="mt-2 text-sm text-muted-foreground">{usageHealth}</p>
+          </PageSection>
+
+          <Separator className="my-8" />
+
+          <PageSection title="Planejamento futuro">
+            <div className="grid gap-4 md:grid-cols-3">
+              {plans.map((plan) => (
+                <div
+                  key={plan.id}
+                  className={`rounded-xl border p-5 ${
+                    plan.recommended ? "border-foreground bg-secondary/20" : "border-border"
+                  }`}
+                >
+                  {plan.recommended ? <Badge className="mb-3">Referencia futura</Badge> : null}
+                  <h3 className="text-lg font-semibold">{plan.name}</h3>
+                  <div className="mb-4 mt-2">
+                    <span className="text-2xl font-bold">{plan.price}</span>
+                    <span className="ml-1 text-sm text-muted-foreground">{plan.period}</span>
+                  </div>
+                  <ul className="mb-5 space-y-2">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-center gap-2 text-sm">
+                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  <Button variant="outline" className="w-full" disabled>
+                    Disponivel quando billing entrar
+                  </Button>
+                </div>
+              ))}
             </div>
-          </div>
+          </PageSection>
         </div>
-      </PageSection>
-
-      <Separator className="my-8" />
-
-      <PageSection title="Planos">
-        <div className="grid grid-cols-3 gap-4">
-          {plans.map((plan) => (
-            <div
-              key={plan.id}
-              className={`rounded-lg border p-6 ${plan.recommended ? "border-foreground bg-secondary/30" : "border-border"}`}
-            >
-              {plan.recommended && <Badge className="mb-4">Recomendado</Badge>}
-              <h3 className="text-lg font-semibold">{plan.name}</h3>
-              <div className="mt-2 mb-4">
-                <span className="text-3xl font-bold">{plan.price}</span>
-                <span className="text-sm text-muted-foreground ml-1">{plan.period}</span>
-              </div>
-              <ul className="space-y-2 mb-6">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <Button
-                variant={plan.current ? "outline" : plan.recommended ? "default" : "outline"}
-                className="w-full"
-                disabled
-              >
-                {plan.current ? "Plano atual" : "Disponivel quando billing entrar"}
-              </Button>
-            </div>
-          ))}
-        </div>
-      </PageSection>
-      </div>
       </div>
     </PageContent>
   )

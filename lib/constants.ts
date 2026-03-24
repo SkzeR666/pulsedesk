@@ -89,11 +89,11 @@ export const DEFAULT_WORKSPACE_PERMISSION_SETTINGS: WorkspacePermissionSettings 
     viewAllRequests: true,
   },
   member: {
-    manageMembers: false,
+    manageMembers: true,
     manageViews: true,
-    manageKnowledge: false,
-    manageSettings: false,
+    manageKnowledge: true,
+    manageSettings: true,
     updateRequests: true,
-    viewAllRequests: false,
+    viewAllRequests: true,
   },
 }
