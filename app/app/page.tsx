@@ -30,14 +30,14 @@ import type { Request } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 type StatusFilter = Request["status"] | "all"
-type ScopeFilter = "all" | "mine" | "waiting" | "recent"
+type TeamFilter = string | "all"
 
 export default function InboxPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const {
     requests,
-    user,
+    teams,
     views,
     selectedRequestId,
     setSelectedRequestId,
@@ -45,9 +45,7 @@ export default function InboxPage() {
     hasPermission,
   } = useApp()
   const [searchQuery, setSearchQuery] = useState("")
-  const [scopeFilter, setScopeFilter] = useState<ScopeFilter>(
-    (searchParams.get("scope") as ScopeFilter | null) ?? "all"
-  )
+  const [teamFilter, setTeamFilter] = useState<TeamFilter>("all")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [showDetail, setShowDetail] = useState(false)
   const [isNewViewOpen, setIsNewViewOpen] = useState(false)
@@ -79,42 +77,18 @@ export default function InboxPage() {
   }
 
   const filteredRequests = useMemo(() => {
-    const scopedRequests = requests.filter((request) => {
-      if (scopeFilter === "mine") {
-        return request.assigneeId === user?.id && request.status !== "resolved" && request.status !== "closed"
-      }
-
-      if (scopeFilter === "waiting") {
-        return request.requesterId === user?.id && request.status === "waiting"
-      }
-
-      return true
-    })
-
-    const baseRequests =
-      scopeFilter === "recent"
-        ? [...scopedRequests]
-            .filter((request) => request.assigneeId === user?.id || request.requesterId === user?.id)
-            .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-            .slice(0, 10)
-        : scopedRequests
-
-    return baseRequests.filter((request) => {
+    return requests.filter((request) => {
       const matchesView = filterByView(request)
       const matchesSearch =
         request.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         request.description.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesTeam = teamFilter === "all" || request.teamId === teamFilter
       const matchesStatus = statusFilter === "all" || request.status === statusFilter
-      return matchesView && matchesSearch && matchesStatus
+      return matchesView && matchesSearch && matchesTeam && matchesStatus
     })
-  }, [requests, scopeFilter, searchQuery, statusFilter, user?.id, views, activeView])
+  }, [requests, searchQuery, statusFilter, teamFilter, views, activeView])
 
   const selectedRequest = requests.find((request) => request.id === selectedRequestId) ?? null
-
-  useEffect(() => {
-    const nextScope = (searchParams.get("scope") as ScopeFilter | null) ?? "all"
-    setScopeFilter(nextScope)
-  }, [searchParams])
 
   const handleSelect = (id: string) => {
     setSelectedRequestId(id)
@@ -153,21 +127,10 @@ export default function InboxPage() {
     }
   }
 
-  const handleScopeChange = (value: ScopeFilter) => {
-    setScopeFilter(value)
-    const params = new URLSearchParams(searchParams.toString())
-    if (value === "all") {
-      params.delete("scope")
-    } else {
-      params.set("scope", value)
-    }
-    router.push(params.toString() ? `/app?${params.toString()}` : "/app")
-  }
-
   const clearFilters = () => {
     setSearchQuery("")
     setStatusFilter("all")
-    handleScopeChange("all")
+    setTeamFilter("all")
   }
 
   return (
@@ -317,30 +280,25 @@ export default function InboxPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex flex-wrap gap-2">
-                  {([
-                    { value: "all", label: "Todos" },
-                    { value: "mine", label: "Meus" },
-                    { value: "waiting", label: "Aguardando" },
-                    { value: "recent", label: "Recentes" },
-                  ] as const).map((item) => (
+                  {([{ value: "all", label: "Todos" }, ...teams.map((team) => ({ value: team.id, label: team.name }))] as const).map((item) => (
                     <Button
                       key={item.value}
                       type="button"
-                      variant={scopeFilter === item.value ? "secondary" : "ghost"}
+                      variant={teamFilter === item.value ? "secondary" : "ghost"}
                       size="sm"
                       className={cn(
                         "h-8 rounded-lg px-3",
-                        scopeFilter === item.value
+                        teamFilter === item.value
                           ? "bg-muted text-foreground"
                           : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                       )}
-                      onClick={() => handleScopeChange(item.value)}
+                      onClick={() => setTeamFilter(item.value)}
                     >
                       {item.label}
                     </Button>
                   ))}
                 </div>
-                {scopeFilter !== "all" || statusFilter !== "all" || searchQuery ? (
+                {teamFilter !== "all" || statusFilter !== "all" || searchQuery ? (
                   <Button type="button" variant="ghost" size="sm" className="h-8 shrink-0 px-2.5 text-xs" onClick={clearFilters}>
                     Limpar
                   </Button>
@@ -348,6 +306,9 @@ export default function InboxPage() {
               </div>
 
               <div className="flex flex-wrap gap-2">
+                <span className="flex h-8 items-center px-1 text-xs font-medium text-muted-foreground">
+                  Estados:
+                </span>
                 {([
                   { value: "all", label: "Todos" },
                   { value: "open", label: "Abertos" },
