@@ -11,7 +11,7 @@ interface OpenRouterResponse {
   }>
 }
 
-const DEFAULT_OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini"
+const DEFAULT_OPENROUTER_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
 
 export async function createOpenRouterChatCompletion(messages: OpenRouterMessage[]) {
   const apiKey = process.env.OPENROUTER_API_KEY
