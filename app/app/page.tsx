@@ -309,30 +309,32 @@ export default function InboxPage() {
                 ) : null}
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2">
                 <span className="shrink-0 px-1 text-xs font-medium text-muted-foreground">Estados:</span>
-                {([
-                  { value: "all", label: "Todos" },
-                  { value: "open", label: "Abertos" },
-                  { value: "in_progress", label: "Andamento" },
-                  { value: "waiting", label: "Aguardando" },
-                ] as const).map((item) => (
-                  <Button
-                    key={item.value}
-                    type="button"
-                    variant={statusFilter === item.value ? "secondary" : "ghost"}
-                    size="sm"
-                    className={cn(
-                      "h-8 rounded-lg px-3",
-                      statusFilter === item.value
-                        ? "bg-muted text-foreground"
-                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                    )}
-                    onClick={() => setStatusFilter(item.value as StatusFilter)}
-                  >
-                    {item.label}
-                  </Button>
-                ))}
+                <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {([
+                    { value: "all", label: "Todos" },
+                    { value: "open", label: "Abertos" },
+                    { value: "in_progress", label: "Andamento" },
+                    { value: "waiting", label: "Aguardando" },
+                  ] as const).map((item) => (
+                    <Button
+                      key={item.value}
+                      type="button"
+                      variant={statusFilter === item.value ? "secondary" : "ghost"}
+                      size="sm"
+                      className={cn(
+                        "h-8 shrink-0 rounded-lg px-3",
+                        statusFilter === item.value
+                          ? "bg-muted text-foreground"
+                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                      )}
+                      onClick={() => setStatusFilter(item.value as StatusFilter)}
+                    >
+                      {item.label}
+                    </Button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
