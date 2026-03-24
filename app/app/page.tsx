@@ -314,74 +314,62 @@ export default function InboxPage() {
               ) : null}
             </div>
 
-            <div className="rounded-xl border border-border/70 bg-card/60 p-3">
+            <div className="space-y-2">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                  Filtros
-                </p>
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    { value: "all", label: "Todos" },
+                    { value: "mine", label: "Meus" },
+                    { value: "waiting", label: "Aguardando" },
+                    { value: "recent", label: "Recentes" },
+                  ] as const).map((item) => (
+                    <Button
+                      key={item.value}
+                      type="button"
+                      variant={scopeFilter === item.value ? "secondary" : "ghost"}
+                      size="sm"
+                      className={cn(
+                        "h-8 rounded-lg px-3",
+                        scopeFilter === item.value
+                          ? "bg-muted text-foreground"
+                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                      )}
+                      onClick={() => handleScopeChange(item.value)}
+                    >
+                      {item.label}
+                    </Button>
+                  ))}
+                </div>
                 {scopeFilter !== "all" || statusFilter !== "all" || searchQuery ? (
-                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={clearFilters}>
+                  <Button type="button" variant="ghost" size="sm" className="h-8 shrink-0 px-2.5 text-xs" onClick={clearFilters}>
                     Limpar
                   </Button>
                 ) : null}
               </div>
 
-              <div className="mt-3 space-y-3">
-                <div>
-                  <p className="mb-2 text-xs text-muted-foreground">Escopo</p>
-                  <div className="flex flex-wrap gap-2">
-                    {([
-                      { value: "all", label: "Todos" },
-                      { value: "mine", label: "Meus" },
-                      { value: "waiting", label: "Aguardando" },
-                      { value: "recent", label: "Recentes" },
-                    ] as const).map((item) => (
-                      <Button
-                        key={item.value}
-                        type="button"
-                        variant={scopeFilter === item.value ? "secondary" : "ghost"}
-                        size="sm"
-                        className={cn(
-                          "h-8 rounded-lg px-3",
-                          scopeFilter === item.value
-                            ? "bg-muted text-foreground"
-                            : "border border-transparent text-muted-foreground hover:border-border/70 hover:bg-muted/50 hover:text-foreground"
-                        )}
-                        onClick={() => handleScopeChange(item.value)}
-                      >
-                        {item.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="mb-2 text-xs text-muted-foreground">Status</p>
-                  <div className="flex flex-wrap gap-2">
-                    {([
-                      { value: "all", label: "Todos" },
-                      { value: "open", label: "Abertos" },
-                      { value: "in_progress", label: "Andamento" },
-                      { value: "waiting", label: "Aguardando" },
-                    ] as const).map((item) => (
-                      <Button
-                        key={item.value}
-                        type="button"
-                        variant={statusFilter === item.value ? "secondary" : "ghost"}
-                        size="sm"
-                        className={cn(
-                          "h-8 rounded-lg px-3",
-                          statusFilter === item.value
-                            ? "bg-muted text-foreground"
-                            : "border border-transparent text-muted-foreground hover:border-border/70 hover:bg-muted/50 hover:text-foreground"
-                        )}
-                        onClick={() => setStatusFilter(item.value as StatusFilter)}
-                      >
-                        {item.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { value: "all", label: "Todos" },
+                  { value: "open", label: "Abertos" },
+                  { value: "in_progress", label: "Andamento" },
+                  { value: "waiting", label: "Aguardando" },
+                ] as const).map((item) => (
+                  <Button
+                    key={item.value}
+                    type="button"
+                    variant={statusFilter === item.value ? "secondary" : "ghost"}
+                    size="sm"
+                    className={cn(
+                      "h-8 rounded-lg px-3",
+                      statusFilter === item.value
+                        ? "bg-muted text-foreground"
+                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                    )}
+                    onClick={() => setStatusFilter(item.value as StatusFilter)}
+                  >
+                    {item.label}
+                  </Button>
+                ))}
               </div>
             </div>
           </div>
