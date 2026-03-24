@@ -1,47 +1,188 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useApp } from "@/lib/app-context"
 import { RequestList } from "@/components/app/request-list"
 import { RequestDetail } from "@/components/app/request-detail"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, X } from "lucide-react"
+import { NewViewModal } from "@/components/app/new-view-modal"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Search, X, MoreHorizontal, Pencil, Trash2, Plus } from "lucide-react"
 import type { Request } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 type StatusFilter = Request["status"] | "all"
 type PriorityFilter = Request["priority"] | "all"
+type ScopeFilter = "all" | "mine" | "waiting" | "recent"
 
 export default function InboxPage() {
-  const { requests, selectedRequestId, setSelectedRequestId } = useApp()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const {
+    requests,
+    user,
+    views,
+    selectedRequestId,
+    setSelectedRequestId,
+    deleteView,
+    hasPermission,
+  } = useApp()
   const [searchQuery, setSearchQuery] = useState("")
+  const [scopeFilter, setScopeFilter] = useState<ScopeFilter>(
+    (searchParams.get("scope") as ScopeFilter | null) ?? "all"
+  )
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all")
   const [showDetail, setShowDetail] = useState(false)
+  const [isNewViewOpen, setIsNewViewOpen] = useState(false)
+  const [editingViewId, setEditingViewId] = useState<string | null>(null)
+  const [deletingViewId, setDeletingViewId] = useState<string | null>(null)
+  const canManageViews = hasPermission("manageViews")
 
-  // Filter requests
+  const activeViewId = searchParams.get("view") || views[0]?.id
+  const activeView = views.find((view) => view.id === activeViewId) || views[0]
+  const editingView = views.find((view) => view.id === editingViewId) ?? null
+  const deletingView = views.find((view) => view.id === deletingViewId) ?? null
+
+  const filterByView = (request: Request) => {
+    if (!activeView) return true
+
+    if (activeView.filter.status && !activeView.filter.status.includes(request.status)) return false
+    if (activeView.filter.priority && !activeView.filter.priority.includes(request.priority)) return false
+    if (activeView.filter.teamId && request.teamId !== activeView.filter.teamId) return false
+    if (activeView.filter.assigneeId === "unassigned" && request.assigneeId !== null) return false
+    if (
+      activeView.filter.assigneeId &&
+      activeView.filter.assigneeId !== "unassigned" &&
+      request.assigneeId !== activeView.filter.assigneeId
+    ) {
+      return false
+    }
+
+    return true
+  }
+
   const filteredRequests = useMemo(() => {
-    return requests.filter((r) => {
+    const scopedRequests = requests.filter((r) => {
+      if (scopeFilter === "mine") {
+        return r.assigneeId === user?.id && r.status !== "resolved" && r.status !== "closed"
+      }
+
+      if (scopeFilter === "waiting") {
+        return r.requesterId === user?.id && r.status === "waiting"
+      }
+
+      return true
+    })
+
+    const baseRequests =
+      scopeFilter === "recent"
+        ? [...scopedRequests]
+            .filter((r) => r.assigneeId === user?.id || r.requesterId === user?.id)
+            .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+            .slice(0, 10)
+        : scopedRequests
+
+    return baseRequests.filter((r) => {
+      const matchesView = filterByView(r)
       const matchesSearch =
         r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         r.description.toLowerCase().includes(searchQuery.toLowerCase())
       const matchesStatus = statusFilter === "all" || r.status === statusFilter
       const matchesPriority = priorityFilter === "all" || r.priority === priorityFilter
-      return matchesSearch && matchesStatus && matchesPriority
+      return matchesView && matchesSearch && matchesStatus && matchesPriority
     })
-  }, [priorityFilter, requests, searchQuery, statusFilter])
+  }, [activeViewId, priorityFilter, requests, scopeFilter, searchQuery, statusFilter, user?.id, views])
 
   const selectedRequest = requests.find((r) => r.id === selectedRequestId) ?? null
+
+  useEffect(() => {
+    const nextScope = (searchParams.get("scope") as ScopeFilter | null) ?? "all"
+    setScopeFilter(nextScope)
+  }, [searchParams])
 
   const handleSelect = (id: string) => {
     setSelectedRequestId(id)
     setShowDetail(true)
   }
 
+  const getViewCount = (viewId: string) => {
+    const view = views.find((item) => item.id === viewId)
+    if (!view) return requests.length
+
+    return requests.filter((request) => {
+      if (view.filter.status && !view.filter.status.includes(request.status)) return false
+      if (view.filter.priority && !view.filter.priority.includes(request.priority)) return false
+      if (view.filter.teamId && request.teamId !== view.filter.teamId) return false
+      if (view.filter.assigneeId === "unassigned" && request.assigneeId !== null) return false
+      if (
+        view.filter.assigneeId &&
+        view.filter.assigneeId !== "unassigned" &&
+        request.assigneeId !== view.filter.assigneeId
+      ) {
+        return false
+      }
+      return true
+    }).length
+  }
+
+  const handleDeleteView = async () => {
+    if (!deletingView) return
+
+    const nextView = views.find((view) => view.id !== deletingView.id) ?? null
+    await deleteView(deletingView.id)
+    setDeletingViewId(null)
+
+    if (activeViewId === deletingView.id) {
+      router.push(nextView ? `/app?view=${nextView.id}` : "/app")
+    }
+  }
+
   return (
     <div className="flex h-dvh min-w-0">
+      <NewViewModal open={isNewViewOpen} onOpenChange={setIsNewViewOpen} />
+      <NewViewModal
+        open={Boolean(editingView)}
+        onOpenChange={(open) => !open && setEditingViewId(null)}
+        initialView={editingView}
+      />
+      <AlertDialog open={Boolean(deletingView)} onOpenChange={(open) => !open && setDeletingViewId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir setor</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingView
+                ? `O setor "${deletingView.name}" sera removido da workspace.`
+                : "Este setor sera removido da workspace."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void handleDeleteView()} className="bg-red-600 hover:bg-red-700">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Left: list */}
       <section className="flex w-full flex-col border-r border-border/60 md:w-[420px]">
         <header className="shrink-0 bg-background px-4 py-4">
@@ -58,6 +199,83 @@ export default function InboxPage() {
           </div>
 
           <div className="mt-4 flex flex-col gap-3">
+            {views.length > 0 ? (
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                {views.map((view) => {
+                  const isActive = activeViewId === view.id
+                  const count = getViewCount(view.id)
+
+                  return (
+                    <div
+                      key={view.id}
+                      className={cn(
+                        "group flex shrink-0 items-center rounded-xl border px-2 py-1",
+                        isActive
+                          ? "border-border bg-background shadow-sm"
+                          : "border-transparent bg-transparent hover:border-border/70 hover:bg-muted/30"
+                      )}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/app?view=${view.id}`)}
+                        className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm"
+                      >
+                        <span className={cn("whitespace-nowrap", isActive ? "font-medium text-foreground" : "text-muted-foreground")}>
+                          {view.name}
+                        </span>
+                        <span className="rounded-full bg-muted px-1.5 py-0.5 text-[11px] tabular-nums text-muted-foreground">
+                          {count}
+                        </span>
+                      </button>
+
+                      {canManageViews ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              aria-label={`Acoes do setor ${view.name}`}
+                              className={cn(
+                                "ml-1 inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground",
+                                isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                              )}
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setEditingViewId(view.id)}>
+                              <Pencil className="h-4 w-4" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setDeletingViewId(view.id)}
+                              className="text-red-600 focus:text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : null}
+                    </div>
+                  )
+                })}
+
+                {canManageViews ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsNewViewOpen(true)}
+                    className="shrink-0 rounded-xl border border-dashed"
+                  >
+                    <Plus className="mr-1 h-4 w-4" />
+                    Novo
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -76,6 +294,34 @@ export default function InboxPage() {
                   <X className="h-4 w-4" />
                 </button>
               ) : null}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {([
+                { value: "all", label: "Todos" },
+                { value: "mine", label: "Atribuidos a mim" },
+                { value: "waiting", label: "Aguardando resposta" },
+                { value: "recent", label: "Recentes" },
+              ] as const).map((item) => (
+                <Button
+                  key={item.value}
+                  type="button"
+                  variant={scopeFilter === item.value ? "secondary" : "ghost"}
+                  size="sm"
+                  className={cn("px-2.5", scopeFilter === item.value && "bg-muted text-foreground")}
+                  onClick={() => {
+                    const params = new URLSearchParams(searchParams.toString())
+                    if (item.value === "all") {
+                      params.delete("scope")
+                    } else {
+                      params.set("scope", item.value)
+                    }
+                    router.push(params.toString() ? `/app?${params.toString()}` : "/app")
+                  }}
+                >
+                  {item.label}
+                </Button>
+              ))}
             </div>
 
             <div className="flex flex-wrap items-center gap-2">

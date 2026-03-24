@@ -60,11 +60,23 @@ export const DEFAULT_NOTIFICATION_PREFERENCES = {
   assigned: { email: true, push: true },
   comment: { email: false, push: true },
   mention: { email: true, push: true },
-  resolved: { email: true, push: false },
+  resolved: { email: true, push: true },
   "status-change": { email: false, push: true },
-  "priority-change": { email: false, push: false },
+  "priority-change": { email: false, push: true },
   "new-member": { email: false, push: false },
   "kb-update": { email: false, push: false },
+}
+
+export const notificationTypeLabels = {
+  "new-request": "Novo request criado",
+  assigned: "Request atribuido a mim",
+  comment: "Novo comentario",
+  mention: "Mencionado em comentario",
+  resolved: "Request resolvido",
+  "status-change": "Mudanca de status",
+  "priority-change": "Mudanca de prioridade",
+  "new-member": "Novo membro no workspace",
+  "kb-update": "Artigo interno atualizado",
 }
 
 export const DEFAULT_WORKSPACE_PERMISSION_SETTINGS: WorkspacePermissionSettings = {

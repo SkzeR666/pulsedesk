@@ -12,6 +12,7 @@ import {
 } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import type { User as AuthUser } from "@supabase/supabase-js"
+import { toast } from "sonner"
 import {
   DEFAULT_WORKSPACE_PERMISSION_SETTINGS,
   DEFAULT_NOTIFICATION_PREFERENCES,
@@ -23,6 +24,7 @@ import type {
   Invitation,
   KnowledgeArticle,
   NotificationPreferences,
+  NotificationItem,
   Request,
   Team,
   User,
@@ -113,6 +115,7 @@ interface AppContextType {
   permissionSettings: WorkspacePermissionSettings
   preferences: UserPreferences
   notificationPreferences: NotificationPreferences
+  notifications: NotificationItem[]
   loading: boolean
   isAuthenticated: boolean
   selectedRequestId: string | null
@@ -155,6 +158,8 @@ interface AppContextType {
   hasPermission: (permission: WorkspacePermissionKey) => boolean
   savePreferences: (payload: Partial<UserPreferences>) => Promise<void>
   saveNotificationPreferences: (payload: NotificationPreferences) => Promise<void>
+  markNotificationRead: (id: string) => Promise<void>
+  markAllNotificationsRead: () => Promise<void>
 }
 
 const defaultPreferences: UserPreferences = {
@@ -290,6 +295,23 @@ function mapInvitation(invitation: any): Invitation {
   }
 }
 
+function mapNotification(notification: any): NotificationItem {
+  return {
+    id: notification.id,
+    userId: notification.user_id,
+    workspaceId: notification.workspace_id,
+    type: notification.type,
+    title: notification.title,
+    body: notification.body ?? "",
+    link: notification.link ?? null,
+    entityType: notification.entity_type ?? null,
+    entityId: notification.entity_id ?? null,
+    metadata: notification.metadata ?? {},
+    readAt: notification.read_at ?? null,
+    createdAt: notification.created_at,
+  }
+}
+
 async function apiRequest<T>(input: string, init?: RequestInit): Promise<T> {
   const response = await fetch(input, {
     ...init,
@@ -331,12 +353,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences)
   const [notificationPreferences, setNotificationPreferences] =
     useState<NotificationPreferences>(defaultNotificationPreferences)
+  const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null)
   const [isCommandBarOpen, setIsCommandBarOpen] = useState(false)
   const [isNewRequestOpen, setIsNewRequestOpen] = useState(false)
   const [activeView, setActiveView] = useState("inbox")
   const realtimeRefreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const hasBootstrappedNotificationsRef = useRef(false)
+  const previousUnreadIdsRef = useRef<string[]>([])
 
   const clearWorkspaceData = useCallback(() => {
     setPlatformAdmin(false)
@@ -354,6 +379,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPermissionSettings(DEFAULT_WORKSPACE_PERMISSION_SETTINGS)
     setPreferences(defaultPreferences)
     setNotificationPreferences(defaultNotificationPreferences)
+    setNotifications([])
     setSelectedRequestId(null)
   }, [])
 
@@ -382,6 +408,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setPermissionSettings(DEFAULT_WORKSPACE_PERMISSION_SETTINGS)
         setPreferences(defaultPreferences)
         setNotificationPreferences(defaultNotificationPreferences)
+        setNotifications([])
         return bundle
       }
 
@@ -433,6 +460,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } else {
         setNotificationPreferences(defaultNotificationPreferences)
       }
+
+      setNotifications((bundle.notifications ?? []).map(mapNotification))
 
       const currentMember = memberRows.find((member: any) => member.user_id === bundle.authUser.id)
 
@@ -519,7 +548,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    } = supabase.auth.onAuthStateChange((event: string) => {
       if (!["INITIAL_SESSION", "SIGNED_IN", "SIGNED_OUT", "USER_UPDATED"].includes(event)) {
         return
       }
@@ -551,6 +580,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const channel = supabase
       .channel(`workspace-sync:${workspace.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${authUser.id}`,
+        },
+        scheduleRealtimeRefresh
+      )
       .on(
         "postgres_changes",
         {
@@ -658,6 +697,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [authUser, scheduleRealtimeRefresh, supabase, workspace?.id])
 
   useEffect(() => {
+    if (!authUser || !workspace?.id) {
+      return
+    }
+
+    const intervalId = setInterval(() => {
+      void refreshData().catch(() => {
+        clearWorkspaceData()
+      })
+    }, 15000)
+
+    return () => clearInterval(intervalId)
+  }, [authUser, clearWorkspaceData, refreshData, workspace?.id])
+
+  useEffect(() => {
     if (loading) return
 
     if (!authUser && pathname.startsWith("/app")) {
@@ -687,6 +740,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
       router.replace(platformAdmin ? "/platform" : "/onboarding")
     }
   }, [authUser, loading, onboardingCompleted, pathname, platformAdmin, router, workspace])
+
+  useEffect(() => {
+    const unreadIds = notifications
+      .filter((notification) => !notification.readAt)
+      .map((notification) => notification.id)
+
+    if (!hasBootstrappedNotificationsRef.current) {
+      hasBootstrappedNotificationsRef.current = true
+      previousUnreadIdsRef.current = unreadIds
+      return
+    }
+
+    const previousUnreadIds = new Set(previousUnreadIdsRef.current)
+    const newUnreadNotifications = notifications.filter(
+      (notification) => !notification.readAt && !previousUnreadIds.has(notification.id)
+    )
+
+    for (const notification of newUnreadNotifications.slice(0, 3)) {
+      toast(notification.title, {
+        description: notification.body || "Voce tem uma nova atualizacao.",
+      })
+    }
+
+    previousUnreadIdsRef.current = unreadIds
+  }, [notifications])
 
   const signIn = useCallback(
     async (email: string, password: string) => {
@@ -818,8 +896,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify(payload),
       })
       setRequests((current) => [mapRequest(createdRequest), ...current])
+      await refreshData()
     },
-    []
+    [refreshData]
   )
 
   const updateRequest = useCallback(
@@ -839,8 +918,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setRequests((current) =>
         current.map((request) => (request.id === id ? mappedRequest : request))
       )
+      await refreshData()
     },
-    []
+    [refreshData]
   )
 
   const addComment = useCallback(
@@ -850,8 +930,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ content }),
       })
       setComments((current) => [...current, mapComment(createdComment)])
+      await refreshData()
     },
-    []
+    [refreshData]
   )
 
   const createArticle = useCallback(
@@ -861,8 +942,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify(payload),
       })
       setArticles((current) => [mapArticle(createdArticle), ...current])
+      await refreshData()
     },
-    []
+    [refreshData]
   )
 
   const createView = useCallback(
@@ -908,8 +990,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setArticles((current) =>
         current.map((article) => (article.id === id ? mappedArticle : article))
       )
+      await refreshData()
     },
-    []
+    [refreshData]
   )
 
   const deleteArticle = useCallback(
@@ -1089,6 +1172,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     []
   )
 
+  const markNotificationRead = useCallback(async (id: string) => {
+    await apiRequest(`/api/notifications/${id}`, {
+      method: "PATCH",
+    })
+    setNotifications((current) =>
+      current.map((notification) =>
+        notification.id === id
+          ? { ...notification, readAt: notification.readAt ?? new Date().toISOString() }
+          : notification
+      )
+    )
+  }, [])
+
+  const markAllNotificationsRead = useCallback(async () => {
+    await apiRequest("/api/notifications", {
+      method: "PATCH",
+    })
+    const now = new Date().toISOString()
+    setNotifications((current) =>
+      current.map((notification) => ({
+        ...notification,
+        readAt: notification.readAt ?? now,
+      }))
+    )
+  }, [])
+
   return (
     <AppContext.Provider
       value={{
@@ -1108,6 +1217,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         permissionSettings,
         preferences,
         notificationPreferences,
+        notifications,
         loading,
         isAuthenticated: Boolean(authUser),
         selectedRequestId,
@@ -1150,6 +1260,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         hasPermission,
         savePreferences,
         saveNotificationPreferences,
+        markNotificationRead,
+        markAllNotificationsRead,
       }}
     >
       {children}

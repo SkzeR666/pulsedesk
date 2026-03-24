@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
+import { priorityLabels, statusLabels } from "@/lib/constants"
+import { createNotifications } from "@/lib/server/notifications"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { requireWorkspacePermission } from "@/lib/server/route-helpers"
 import { firstRow } from "@/lib/server/supabase-results"
+import type { RequestPriority, RequestStatus } from "@/lib/types"
 
 export async function PATCH(
   request: NextRequest,
@@ -16,7 +19,7 @@ export async function PATCH(
 
   const { data: requestRows, error: requestError } = await supabase
     .from("requests")
-    .select("id, requester_id, assignee_id, workspace_id, status")
+    .select("id, title, requester_id, assignee_id, workspace_id, status, priority")
     .eq("id", id)
     .eq("workspace_id", bundle.workspace.id)
     .limit(1)
@@ -126,5 +129,71 @@ export async function PATCH(
     return NextResponse.json({ error: updateError.message }, { status: 400 })
   }
 
-  return NextResponse.json(firstRow(data))
+  const updatedRequest = firstRow(data)
+  const recipients = new Set<string>()
+
+  if (currentRequest.requester_id) recipients.add(currentRequest.requester_id)
+  if (currentRequest.assignee_id) recipients.add(currentRequest.assignee_id)
+  if (updatedRequest?.assignee_id) recipients.add(updatedRequest.assignee_id)
+
+  const notifications = []
+
+  if (body.assigneeId !== undefined && updatedRequest?.assignee_id && updatedRequest.assignee_id !== currentRequest.assignee_id) {
+    notifications.push({
+      userId: updatedRequest.assignee_id,
+      type: "assigned" as const,
+      title: "Um request foi atribuido a voce",
+      body: updatedRequest.title,
+      link: "/app",
+      entityType: "request" as const,
+      entityId: updatedRequest.id,
+      metadata: { requestId: updatedRequest.id },
+    })
+  }
+
+  if (body.status !== undefined && body.status !== currentRequest.status) {
+    const nextStatus = body.status as RequestStatus
+    notifications.push(
+      ...[...recipients].map((userId) => ({
+        userId,
+        type: (nextStatus === "resolved" || nextStatus === "closed" ? "resolved" : "status-change") as
+          | "resolved"
+          | "status-change",
+        title:
+          nextStatus === "resolved" || nextStatus === "closed"
+            ? "Request resolvido"
+            : "Status do request atualizado",
+        body:
+          nextStatus === "resolved" || nextStatus === "closed"
+            ? `${updatedRequest?.title} foi resolvido.`
+            : `${updatedRequest?.title} mudou para ${statusLabels[nextStatus] ?? nextStatus}.`,
+        link: "/app",
+        entityType: "request" as const,
+        entityId: updatedRequest?.id ?? null,
+        metadata: { requestId: updatedRequest?.id ?? null },
+      }))
+    )
+  }
+
+  if (body.priority !== undefined && body.priority !== currentRequest.priority) {
+    const nextPriority = body.priority as RequestPriority
+    notifications.push(
+      ...[...recipients].map((userId) => ({
+        userId,
+        type: "priority-change" as const,
+        title: "Prioridade do request atualizada",
+        body: `${updatedRequest?.title} agora esta com prioridade ${priorityLabels[nextPriority] ?? nextPriority}.`,
+        link: "/app",
+        entityType: "request" as const,
+        entityId: updatedRequest?.id ?? null,
+        metadata: { requestId: updatedRequest?.id ?? null },
+      }))
+    )
+  }
+
+  await createNotifications(bundle.workspace.id, notifications, bundle.authUser.id, {
+    includeActor: true,
+  })
+
+  return NextResponse.json(updatedRequest)
 }

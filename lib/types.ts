@@ -149,6 +149,32 @@ export interface NotificationPreferences {
   weeklyDigest: boolean
 }
 
+export type NotificationType =
+  | "new-request"
+  | "assigned"
+  | "comment"
+  | "mention"
+  | "resolved"
+  | "status-change"
+  | "priority-change"
+  | "new-member"
+  | "kb-update"
+
+export interface NotificationItem {
+  id: string
+  userId: string
+  workspaceId: string
+  type: NotificationType
+  title: string
+  body: string
+  link: string | null
+  entityType: "request" | "comment" | "article" | "workspace" | "member" | null
+  entityId: string | null
+  metadata: Record<string, unknown>
+  readAt: string | null
+  createdAt: string
+}
+
 export interface WaitlistLead {
   id: string
   email: string

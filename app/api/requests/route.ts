@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireWorkspaceContext } from "@/lib/server/route-helpers"
+import { createNotifications } from "@/lib/server/notifications"
 import { firstRow } from "@/lib/server/supabase-results"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 
@@ -39,5 +40,51 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: insertError.message }, { status: 400 })
   }
 
-  return NextResponse.json(firstRow(data))
+  const createdRequest = firstRow(data)
+
+  const { data: memberRows, error: membersError } = await supabase
+    .from("workspace_members")
+    .select("user_id, role")
+    .eq("workspace_id", bundle.workspace.id)
+
+  if (membersError) {
+    return NextResponse.json({ error: membersError.message }, { status: 400 })
+  }
+
+  const adminIds = (memberRows ?? [])
+    .filter((member: any) => member.role === "admin")
+    .map((member: any) => member.user_id)
+
+  await createNotifications(
+    bundle.workspace.id,
+    [
+      ...adminIds.map((userId) => ({
+        userId,
+        type: "new-request" as const,
+        title: "Novo request criado",
+        body: `${bundle.user?.name ?? "Alguem"} abriu "${createdRequest?.title ?? body.title}".`,
+        link: "/app",
+        entityType: "request" as const,
+        entityId: createdRequest?.id ?? null,
+        metadata: { requestId: createdRequest?.id ?? null },
+      })),
+      ...(createdRequest?.assignee_id
+        ? [
+            {
+              userId: createdRequest.assignee_id,
+              type: "assigned" as const,
+              title: "Um request foi atribuido a voce",
+              body: createdRequest.title,
+              link: "/app",
+              entityType: "request" as const,
+              entityId: createdRequest.id,
+              metadata: { requestId: createdRequest.id },
+            },
+          ]
+        : []),
+    ],
+    bundle.authUser.id
+  )
+
+  return NextResponse.json(createdRequest)
 }

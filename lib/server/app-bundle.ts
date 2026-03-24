@@ -29,6 +29,11 @@ function isIgnorableWorkspacePermissionsError(error: { message?: string } | null
   return message.includes("workspace_role_permissions") && (message.includes("does not exist") || message.includes("schema cache"))
 }
 
+function isIgnorableNotificationsError(error: { message?: string } | null) {
+  const message = error?.message?.toLowerCase() ?? ""
+  return message.includes("notifications") && (message.includes("does not exist") || message.includes("schema cache"))
+}
+
 function getResolvedPermissionSettings(rows: any[] | null | undefined) {
   const adminRow = rows?.find((row) => row.role === "admin")
   const memberRow = rows?.find((row) => row.role === "member")
@@ -69,6 +74,7 @@ function getLoggedOutBundle() {
     invitations: [],
     preferences: null,
     notificationPreferences: null,
+    notifications: [],
     permissionSettings: DEFAULT_WORKSPACE_PERMISSION_SETTINGS,
   }
 }
@@ -173,6 +179,7 @@ export async function getAppBundle() {
       invitations: [],
       preferences: null,
       notificationPreferences: null,
+      notifications: [],
       permissionSettings: DEFAULT_WORKSPACE_PERMISSION_SETTINGS,
     }
   }
@@ -218,6 +225,7 @@ export async function getAppBundle() {
     invitationsResponse,
     preferencesResponse,
     notificationsResponse,
+    inboxResponse,
   ] = await Promise.all([
     supabase.from("teams").select("*").eq("workspace_id", workspace.id).order("name"),
     supabase
@@ -261,6 +269,12 @@ export async function getAppBundle() {
       .select("*")
       .eq("user_id", authUser.id)
       .limit(1),
+    supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", authUser.id)
+      .order("created_at", { ascending: false })
+      .limit(50),
   ])
 
   const responses = [
@@ -274,10 +288,15 @@ export async function getAppBundle() {
     invitationsResponse,
     preferencesResponse,
     notificationsResponse,
+    inboxResponse,
   ]
 
   const firstError = responses.find((response) => {
     if (response === messagesResponse && isIgnorableWorkspaceMessagesError(response.error)) {
+      return false
+    }
+
+    if (response === inboxResponse && isIgnorableNotificationsError(response.error)) {
       return false
     }
 
@@ -318,6 +337,7 @@ export async function getAppBundle() {
     invitations: invitationsResponse.data ?? [],
     preferences: preferencesResponse.data?.[0] ?? null,
     notificationPreferences: notificationsResponse.data?.[0] ?? null,
+    notifications: isIgnorableNotificationsError(inboxResponse.error) ? [] : inboxResponse.data ?? [],
     permissionSettings,
   }
 }

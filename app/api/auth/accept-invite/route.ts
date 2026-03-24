@@ -3,6 +3,7 @@ import { firstRow } from "@/lib/server/supabase-results"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { requireSupabaseUser } from "@/lib/server/route-helpers"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { createNotifications } from "@/lib/server/notifications"
 
 interface InvitationRow {
   id: string
@@ -77,6 +78,32 @@ export async function POST(request: NextRequest) {
     if (profileError) {
       throw profileError
     }
+
+    const { data: memberRows, error: membersError } = await supabase
+      .from("workspace_members")
+      .select("user_id, role")
+      .eq("workspace_id", invitation.workspace_id)
+
+    if (membersError) {
+      throw membersError
+    }
+
+    await createNotifications(
+      invitation.workspace_id,
+      (memberRows ?? [])
+        .filter((member: any) => member.role === "admin")
+        .map((member: any) => ({
+          userId: member.user_id,
+          type: "new-member" as const,
+          title: "Novo membro no workspace",
+          body: `${name} entrou no workspace.`,
+          link: "/app/settings/members",
+          entityType: "member" as const,
+          entityId: user.id,
+          metadata: { memberId: user.id },
+        })),
+      user.id
+    )
 
     return NextResponse.json({
       ok: true,

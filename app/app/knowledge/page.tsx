@@ -2,17 +2,40 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
+import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useApp } from "@/lib/app-context"
-import { KNOWLEDGE_CATEGORIES } from "@/lib/constants"
 import { formatDistanceToNow } from "@/lib/date-utils"
 import { NewArticleModal } from "@/components/app/new-article-modal"
-import { EmptyPanel, HeaderCountBadge, PageHeader, PageShell, PageToolbar, SegmentedTabs } from "@/components/app/page-shell"
-import { Search, BookOpen, Eye, Clock, ChevronRight, FileText, Plus } from "lucide-react"
-
-const categories = [{ id: "all", label: "Todos" }, ...KNOWLEDGE_CATEGORIES.map((item) => ({ id: item, label: item }))]
+import { EmptyPanel, HeaderCountBadge, PageHeader, PageShell, PageToolbar } from "@/components/app/page-shell"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Search, BookOpen, Eye, Clock, ChevronRight, FileText, Plus, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 function getArticlePreview(content: string) {
   return content
@@ -27,11 +50,30 @@ function getArticlePreview(content: string) {
 }
 
 export default function KnowledgePage() {
-  const { articles, users, hasPermission } = useApp()
+  const { articles, users, teams, hasPermission, refreshData } = useApp()
   const [searchQuery, setSearchQuery] = useState("")
   const [activeCategory, setActiveCategory] = useState("all")
   const [isNewArticleOpen, setIsNewArticleOpen] = useState(false)
+  const [editingCategory, setEditingCategory] = useState<string | null>(null)
+  const [renamedCategory, setRenamedCategory] = useState("")
+  const [deletingCategory, setDeletingCategory] = useState<string | null>(null)
+  const [isSavingCategory, setIsSavingCategory] = useState(false)
   const canManageKnowledge = hasPermission("manageKnowledge")
+
+  const categories = useMemo(
+    () => [
+      { id: "all", label: "Todos" },
+      ...Array.from(
+        new Set([
+          ...teams.map((team) => team.name.trim()),
+          ...articles.map((article) => article.category.trim()),
+        ].filter(Boolean))
+      )
+        .sort((a, b) => a.localeCompare(b, "pt-BR"))
+        .map((category) => ({ id: category, label: category })),
+    ],
+    [articles, teams]
+  )
 
   const filteredArticles = useMemo(
     () =>
@@ -45,9 +87,126 @@ export default function KnowledgePage() {
     [activeCategory, articles, searchQuery]
   )
 
+  const renameCategory = async () => {
+    const nextCategory = renamedCategory.trim()
+    if (!editingCategory || !nextCategory) return
+
+    setIsSavingCategory(true)
+    try {
+      const response = await fetch("/api/articles/categories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          previousCategory: editingCategory,
+          nextCategory,
+        }),
+      })
+
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        throw new Error(data?.error ?? "Nao foi possivel renomear a categoria.")
+      }
+
+      await refreshData()
+      setActiveCategory(nextCategory)
+      setEditingCategory(null)
+      setRenamedCategory("")
+      toast("Categoria atualizada")
+    } catch (error) {
+      toast("Erro ao atualizar categoria", {
+        description: error instanceof Error ? error.message : "Tente novamente.",
+      })
+    } finally {
+      setIsSavingCategory(false)
+    }
+  }
+
+  const deleteCategory = async () => {
+    if (!deletingCategory) return
+
+    setIsSavingCategory(true)
+    try {
+      const response = await fetch("/api/articles/categories", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category: deletingCategory,
+          fallbackCategory: "Geral",
+        }),
+      })
+
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        throw new Error(data?.error ?? "Nao foi possivel excluir a categoria.")
+      }
+
+      await refreshData()
+      if (activeCategory === deletingCategory) {
+        setActiveCategory("all")
+      }
+      setDeletingCategory(null)
+      toast("Categoria removida")
+    } catch (error) {
+      toast("Erro ao excluir categoria", {
+        description: error instanceof Error ? error.message : "Tente novamente.",
+      })
+    } finally {
+      setIsSavingCategory(false)
+    }
+  }
+
   return (
     <PageShell>
       <NewArticleModal open={isNewArticleOpen} onOpenChange={setIsNewArticleOpen} />
+      <Dialog
+        open={Boolean(editingCategory)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingCategory(null)
+            setRenamedCategory("")
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Renomear categoria</DialogTitle>
+            <DialogDescription>
+              Atualiza essa categoria em todos os artigos do workspace.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Input
+              value={renamedCategory}
+              onChange={(e) => setRenamedCategory(e.target.value)}
+              placeholder="Novo nome da categoria"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingCategory(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => void renameCategory()} disabled={!renamedCategory.trim() || isSavingCategory}>
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <AlertDialog open={Boolean(deletingCategory)} onOpenChange={(open) => !open && setDeletingCategory(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir categoria</AlertDialogTitle>
+            <AlertDialogDescription>
+              Os artigos dessa categoria serao movidos para "Geral".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void deleteCategory()} className="bg-red-600 hover:bg-red-700">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <PageHeader
         title="Artigos internos"
@@ -78,18 +237,73 @@ export default function KnowledgePage() {
       />
 
       <PageToolbar>
-        <SegmentedTabs
-          items={categories.map((category) => ({
-            value: category.id,
-            label: category.label,
-            count:
+        <div className="flex flex-wrap items-center gap-2">
+          {categories.map((category) => {
+            const isActive = activeCategory === category.id
+            const count =
               category.id === "all"
                 ? articles.length
-                : articles.filter((article) => article.category === category.id).length,
-          }))}
-          active={activeCategory}
-          onChange={setActiveCategory}
-        />
+                : articles.filter((article) => article.category === category.id).length
+
+            return (
+              <div
+                key={category.id}
+                className={cn(
+                  "group flex items-center rounded-lg",
+                  isActive
+                    ? "bg-background ring-1 ring-border"
+                    : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
+                )}
+              >
+                <button
+                  type="button"
+                  onClick={() => setActiveCategory(category.id)}
+                  className="inline-flex items-center gap-2 px-3 py-2 text-sm"
+                >
+                  <span>{category.label}</span>
+                  <span className={cn("rounded-md px-1.5 py-0.5 text-xs", isActive ? "bg-muted" : "bg-muted/60")}>
+                    {count}
+                  </span>
+                </button>
+
+                {canManageKnowledge && category.id !== "all" ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label={`Acoes da categoria ${category.label}`}
+                        className={cn(
+                          "mr-1 inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground",
+                          isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                        )}
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setEditingCategory(category.id)
+                          setRenamedCategory(category.label)
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setDeletingCategory(category.id)}
+                        className="text-red-600 focus:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : null}
+              </div>
+            )
+          })}
+        </div>
       </PageToolbar>
 
       <div className="flex-1 overflow-auto">

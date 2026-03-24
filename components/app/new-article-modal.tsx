@@ -12,17 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Spinner } from "@/components/ui/spinner"
 import { useApp } from "@/lib/app-context"
-import { KNOWLEDGE_CATEGORIES } from "@/lib/constants"
 import type { KnowledgeArticle } from "@/lib/types"
 import { ArticleContent } from "@/components/app/article-content"
 import { MediaUploadButton } from "@/components/app/media-upload-button"
@@ -110,7 +102,7 @@ Resposta objetiva.
 ]
 
 export function NewArticleModal({ open, onOpenChange, article = null }: NewArticleModalProps) {
-  const { createArticle, updateArticle } = useApp()
+  const { createArticle, updateArticle, articles, teams } = useApp()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [activeTab, setActiveTab] = useState("editor")
   const [formData, setFormData] = useState<ArticleFormData>(emptyForm)
@@ -211,6 +203,19 @@ export function NewArticleModal({ open, onOpenChange, article = null }: NewArtic
     []
   )
 
+  const categories = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          [
+            ...teams.map((team) => team.name.trim()),
+            ...articles.map((item) => item.category.trim()),
+          ].filter(Boolean)
+        )
+      ).sort((a, b) => a.localeCompare(b, "pt-BR")),
+    [articles, teams]
+  )
+
   const isValid = formData.title.trim() && formData.category && formData.content.trim()
 
   return (
@@ -239,21 +244,34 @@ export function NewArticleModal({ open, onOpenChange, article = null }: NewArtic
 
             <div className="space-y-2">
               <Label htmlFor="article-category">Categoria</Label>
-              <Select
+              <Input
+                id="article-category"
+                list="knowledge-categories"
                 value={formData.category}
-                onValueChange={(value) => setFormData((current) => ({ ...current, category: value }))}
-              >
-                <SelectTrigger id="article-category" className="h-11 w-full">
-                  <SelectValue placeholder="Selecione uma categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  {KNOWLEDGE_CATEGORIES.map((category) => (
-                    <SelectItem key={category} value={category}>
+                placeholder="Ex: use um setor existente, como Financeiro ou Operacoes"
+                onChange={(e) => setFormData((current) => ({ ...current, category: e.target.value }))}
+                className="h-11"
+              />
+              <datalist id="knowledge-categories">
+                {categories.map((category) => (
+                  <option key={category} value={category} />
+                ))}
+              </datalist>
+              {categories.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {categories.slice(0, 8).map((category) => (
+                    <Button
+                      key={category}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFormData((current) => ({ ...current, category }))}
+                    >
                       {category}
-                    </SelectItem>
+                    </Button>
                   ))}
-                </SelectContent>
-              </Select>
+                </div>
+              ) : null}
             </div>
           </div>
 

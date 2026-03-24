@@ -6,8 +6,6 @@ import { useApp } from "@/lib/app-context"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   Inbox,
-  CheckSquare,
-  LayoutGrid,
   BookOpen,
   MessageSquareMore,
   Settings,
@@ -18,11 +16,10 @@ import {
 import { Button } from "@/components/ui/button"
 import { WorkspaceSwitcher } from "./workspace-switcher"
 import { ProfileMenu } from "./profile-menu"
+import { NotificationsMenu } from "./notifications-menu"
 
 const workNavItems = [
   { icon: Inbox, label: "Inbox", href: "/app" },
-  { icon: CheckSquare, label: "Minhas tarefas", href: "/app/my-tasks" },
-  { icon: LayoutGrid, label: "Setores", href: "/app/views" },
 ]
 
 const collabNavItems = [{ icon: MessageSquareMore, label: "Chat geral", href: "/app/chat" }]
@@ -76,7 +73,6 @@ export function AppSidebar() {
 
   const getCounts = (href: string) => {
     if (href === "/app") return openRequestsCount
-    if (href === "/app/my-tasks") return myTasksCount
     return undefined
   }
 
@@ -232,6 +228,9 @@ export function AppSidebar() {
       </nav>
 
       <div className={`${compact ? "px-3 pb-4" : "px-4 pb-4"} flex flex-col gap-5`}>
+        <div className="border-t border-border pt-4">
+          <NotificationsMenu compact={compact} />
+        </div>
         <div className="border-t border-border pt-4">
           <ProfileMenu user={user} compact={compact} />
         </div>

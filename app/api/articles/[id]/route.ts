@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
+import { normalizeCategoryInput } from "@/lib/knowledge-categories"
+import { createNotifications } from "@/lib/server/notifications"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { hasWorkspacePermission, requireWorkspaceContext } from "@/lib/server/route-helpers"
@@ -15,6 +17,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   const { id } = (await context.params) as { id: string }
   const body = await request.json()
   const supabase = await getSupabaseServerClient()
+  const { data: teamRows } = await supabase
+    .from("teams")
+    .select("name")
+    .eq("workspace_id", bundle.workspace.id)
+  const category = normalizeCategoryInput(
+    String(body.category ?? ""),
+    (teamRows ?? []).map((team: any) => team.name)
+  )
 
   const { data: articleRows, error: articleError } = await supabase
     .from("knowledge_articles")
@@ -43,7 +53,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     .from("knowledge_articles")
     .update({
       title: body.title?.trim(),
-      category: body.category?.trim(),
+      category,
       content: body.content?.trim(),
     })
     .eq("id", id)
@@ -55,7 +65,33 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: updateError.message }, { status: 400 })
   }
 
-  return NextResponse.json(firstRow(data))
+  const updatedArticle = firstRow(data)
+
+  const { data: memberRows, error: membersError } = await supabase
+    .from("workspace_members")
+    .select("user_id")
+    .eq("workspace_id", bundle.workspace.id)
+
+  if (membersError) {
+    return NextResponse.json({ error: membersError.message }, { status: 400 })
+  }
+
+  await createNotifications(
+    bundle.workspace.id,
+    (memberRows ?? []).map((member: any) => ({
+      userId: member.user_id,
+      type: "kb-update" as const,
+      title: "Artigo interno atualizado",
+      body: updatedArticle?.title ?? body.title,
+      link: "/app/knowledge",
+      entityType: "article" as const,
+      entityId: updatedArticle?.id ?? null,
+      metadata: { articleId: updatedArticle?.id ?? null },
+    })),
+    bundle.authUser.id
+  )
+
+  return NextResponse.json(updatedArticle)
 }
 
 export async function DELETE(_: NextRequest, context: RouteContext) {

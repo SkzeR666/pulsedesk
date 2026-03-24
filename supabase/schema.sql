@@ -237,6 +237,33 @@ create table if not exists public.notification_preferences (
   updated_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  workspace_id uuid not null references public.workspaces(id) on delete cascade,
+  type text not null check (
+    type in (
+      'new-request',
+      'assigned',
+      'comment',
+      'mention',
+      'resolved',
+      'status-change',
+      'priority-change',
+      'new-member',
+      'kb-update'
+    )
+  ),
+  title text not null,
+  body text not null default '',
+  link text,
+  entity_type text check (entity_type in ('request', 'comment', 'article', 'workspace', 'member')),
+  entity_id uuid,
+  metadata jsonb not null default '{}'::jsonb,
+  read_at timestamptz,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
 create table if not exists public.workspace_role_permissions (
   workspace_id uuid not null references public.workspaces(id) on delete cascade,
   role text not null check (role in ('admin', 'member')),
@@ -648,6 +675,7 @@ alter table public.workspace_invitations enable row level security;
 alter table public.workspace_role_permissions enable row level security;
 alter table public.user_preferences enable row level security;
 alter table public.notification_preferences enable row level security;
+alter table public.notifications enable row level security;
 alter table public.waitlist_leads enable row level security;
 
 create policy "profiles read own or coworkers" on public.profiles
@@ -821,6 +849,12 @@ for select using (user_id = auth.uid());
 create policy "notification preferences upsert self" on public.notification_preferences
 for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 
+create policy "notifications select self" on public.notifications
+for select using (user_id = auth.uid());
+
+create policy "notifications update self" on public.notifications
+for update using (user_id = auth.uid()) with check (user_id = auth.uid());
+
 create policy "waitlist no direct access" on public.waitlist_leads
 for all using (false) with check (false);
 
@@ -889,6 +923,12 @@ for each row execute procedure public.handle_updated_at();
 create trigger notification_preferences_updated_at
 before update on public.notification_preferences
 for each row execute procedure public.handle_updated_at();
+
+create index if not exists notifications_user_id_created_at_idx
+  on public.notifications (user_id, created_at desc);
+
+create index if not exists notifications_user_id_read_at_idx
+  on public.notifications (user_id, read_at, created_at desc);
 
 create trigger workspace_role_permissions_updated_at
 before update on public.workspace_role_permissions
