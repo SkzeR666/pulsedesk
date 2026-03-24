@@ -7,8 +7,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { statusLabels, statusColors, priorityLabels } from "@/lib/constants"
 import { formatDistanceToNow } from "@/lib/date-utils"
-import { EmptyPanel, HeaderCountBadge, PageHeader, PageShell, PageToolbar, SegmentedTabs } from "@/components/app/page-shell"
+import { EmptyPanel, HeaderCountBadge, PageContent, PageHeader, PageShell, PageToolbar, SegmentedTabs } from "@/components/app/page-shell"
 import { CheckSquare, ChevronRight, Clock } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 type TabValue = "assigned" | "waiting" | "recent"
 
@@ -65,7 +66,7 @@ export default function MyTasksPage() {
         />
       </PageToolbar>
 
-      <div className="flex-1 overflow-auto">
+      <PageContent>
         {displayedRequests.length === 0 ? (
           <EmptyPanel
             icon={<CheckSquare className="h-6 w-6 text-muted-foreground" />}
@@ -79,7 +80,7 @@ export default function MyTasksPage() {
             }
           />
         ) : (
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-border/60">
             {displayedRequests.map((request) => {
               const requester = users.find((item) => item.id === request.requesterId)
               const team = teams.find((item) => item.id === request.teamId)
@@ -88,18 +89,19 @@ export default function MyTasksPage() {
                 <button
                   key={request.id}
                   onClick={() => handleRequestClick(request.id)}
-                  className="flex items-center gap-4 w-full px-6 py-4 text-left hover:bg-secondary/50 transition-colors"
+                  className="flex w-full items-center gap-4 px-2 py-3 text-left transition-colors hover:bg-muted/30 md:px-3"
                 >
                   <div
-                    className={`w-1.5 h-12 rounded-full shrink-0 ${
+                    className={cn(
+                      "h-12 w-1.5 shrink-0 rounded-full",
                       request.priority === "urgent"
-                        ? "bg-red-500"
+                        ? "bg-destructive"
                         : request.priority === "high"
-                          ? "bg-orange-400"
+                          ? "bg-orange-500"
                           : request.priority === "medium"
-                            ? "bg-blue-400"
-                            : "bg-zinc-300"
-                    }`}
+                            ? "bg-blue-500"
+                            : "bg-muted-foreground"
+                    )}
                   />
 
                   <div className="flex-1 min-w-0">
@@ -123,19 +125,19 @@ export default function MyTasksPage() {
                       </span>
                       <span>{team?.name}</span>
                       <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
+                        <Clock className="h-3 w-3" aria-hidden="true" />
                         {formatDistanceToNow(request.updatedAt)}
                       </span>
                     </div>
                   </div>
 
-                  <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
                 </button>
               )
             })}
           </div>
         )}
-      </div>
+      </PageContent>
     </PageShell>
   )
 }

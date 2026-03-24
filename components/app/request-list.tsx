@@ -5,7 +5,8 @@ import { useApp } from "@/lib/app-context"
 import type { Request } from "@/lib/types"
 import { statusLabels, statusColors } from "@/lib/constants"
 import { formatDistanceToNow } from "@/lib/date-utils"
-import { Inbox, MessageSquare, Paperclip } from "lucide-react"
+import { Inbox, Paperclip } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface RequestListProps {
   requests: Request[]
@@ -31,7 +32,7 @@ export function RequestList({ requests, selectedId, onSelect }: RequestListProps
   }
 
   return (
-    <div className="flex-1 overflow-auto">
+    <div className="h-full overflow-auto">
       {requests.map((request, index) => {
         const requester = users.find((user) => user.id === request.requesterId)
         const team = teams.find((item) => item.id === request.teamId)
@@ -42,41 +43,35 @@ export function RequestList({ requests, selectedId, onSelect }: RequestListProps
           <button
             key={request.id}
             onClick={() => onSelect(request.id)}
-            style={{ animationDelay: `${index * 30}ms` }}
-            className={`group relative flex items-start gap-3 w-full p-4 text-left border-b border-border/50 transition-all duration-200 animate-fade-in opacity-0 ${
-              isSelected 
-                ? "bg-background shadow-sm" 
-                : "hover:bg-background/80"
-            }`}
+            className={cn(
+              "group relative flex w-full items-start gap-3 border-b border-border px-4 py-3 text-left transition-colors",
+              isSelected ? "bg-accent/40" : "hover:bg-muted/40"
+            )}
           >
-            {/* Selection indicator */}
-            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12 rounded-r-full transition-all duration-200 ${
-              isSelected ? "bg-foreground" : "bg-transparent group-hover:bg-muted-foreground/30"
-            }`} />
-
-            {/* Priority indicator */}
             <div
-              className={`w-1.5 h-1.5 rounded-full mt-2 shrink-0 ring-4 transition-all ${
+              className={cn(
+                "mt-2 size-2 shrink-0 rounded-full",
                 request.priority === "urgent"
-                  ? "bg-red-500 ring-red-500/20"
+                  ? "bg-destructive"
                   : request.priority === "high"
-                    ? "bg-orange-500 ring-orange-500/20"
+                    ? "bg-orange-500"
                     : request.priority === "medium"
-                      ? "bg-blue-500 ring-blue-500/20"
-                      : "bg-zinc-400 ring-zinc-400/20"
-              }`}
+                      ? "bg-blue-500"
+                      : "bg-muted-foreground"
+              )}
+              aria-hidden="true"
             />
 
             {/* Requester avatar */}
-            <Avatar className="h-9 w-9 shrink-0 ring-2 ring-background shadow-sm">
-              <AvatarImage src={requester?.avatar} alt={requester?.name} />
+            <Avatar className="h-9 w-9 shrink-0">
+              <AvatarImage src={requester?.avatar} alt={requester?.name ?? "Usuário"} />
               <AvatarFallback className="text-xs font-medium">{requester?.name?.[0]}</AvatarFallback>
             </Avatar>
 
             {/* Content */}
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
-                <p className={`text-sm font-medium truncate transition-colors ${isSelected ? "text-foreground" : "text-foreground/80 group-hover:text-foreground"}`}>
+                <p className="truncate text-sm font-medium">
                   {request.title}
                 </p>
                 <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
@@ -84,20 +79,25 @@ export function RequestList({ requests, selectedId, onSelect }: RequestListProps
                 </span>
               </div>
               
-              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+              <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
                 {request.description}
               </p>
               
               <div className="flex items-center gap-3 mt-2">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium transition-all ${statusColors[request.status]}`}>
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-medium",
+                    statusColors[request.status]
+                  )}
+                >
                   {statusLabels[request.status]}
                 </span>
-                <span className="text-[10px] text-muted-foreground">
+                <span className="truncate text-[10px] text-muted-foreground">
                   {requester?.name}
                 </span>
                 {hasAttachments && (
                   <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                    <Paperclip className="h-3 w-3" />
+                    <Paperclip className="h-3 w-3" aria-hidden="true" />
                     {request.attachments?.length}
                   </span>
                 )}

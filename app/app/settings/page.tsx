@@ -142,7 +142,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-3xl p-6">
+    <div className="min-h-dvh bg-background">
+      <div className="mx-auto w-full max-w-3xl px-4 py-6 md:px-6 md:py-8">
       <input
         ref={avatarInputRef}
         type="file"
@@ -159,27 +160,34 @@ export default function SettingsPage() {
       />
 
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Configuracoes Gerais</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-balance text-2xl font-semibold tracking-tight">Configurações</h1>
+        <p className="mt-1 text-pretty text-sm text-muted-foreground">
           Gerencie seu perfil e, se voce for admin, as configuracoes do workspace.
         </p>
       </div>
 
-      {error && <p className="text-sm text-destructive mb-4">{error}</p>}
+      {error && (
+        <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       <section className="mb-10">
-        <h2 className="text-lg font-semibold mb-4">Workspace</h2>
+        <h2 className="text-base font-semibold">Workspace</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Nome, descrição e identidade visual do seu workspace.
+        </p>
 
-        <form className="space-y-6 rounded-xl border border-border bg-card p-6" onSubmit={handleWorkspaceSubmit}>
+        <form className="mt-4 space-y-6 rounded-lg border border-border bg-card p-4 md:p-6" onSubmit={handleWorkspaceSubmit}>
           <div className="flex items-start gap-4">
             {workspace.logoUrl ? (
               <img
                 src={workspace.logoUrl}
                 alt={workspace.name}
-                className="h-16 w-16 rounded-xl border border-border object-cover shrink-0"
+                className="h-16 w-16 rounded-md border border-border object-cover shrink-0"
               />
             ) : (
-              <div className="w-16 h-16 bg-secondary rounded-xl flex items-center justify-center shrink-0">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-secondary">
                 <Building2 className="h-8 w-8 text-muted-foreground" />
               </div>
             )}
@@ -221,7 +229,7 @@ export default function SettingsPage() {
             />
           </div>
 
-          <Button disabled={isSavingWorkspace || !canManageWorkspace}>
+          <Button className="h-10" disabled={isSavingWorkspace || !canManageWorkspace}>
             {canManageWorkspace
               ? isSavingWorkspace
                 ? <Spinner className="h-4 w-4" />
@@ -234,9 +242,12 @@ export default function SettingsPage() {
       <Separator className="my-8" />
 
       <section className="mb-10">
-        <h2 className="text-lg font-semibold mb-4">Seu Perfil</h2>
+        <h2 className="text-base font-semibold">Seu perfil</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Atualize suas informações pessoais e preferências básicas.
+        </p>
 
-        <form className="space-y-6 rounded-xl border border-border bg-card p-6" onSubmit={handleProfileSubmit}>
+        <form className="mt-4 space-y-6 rounded-lg border border-border bg-card p-4 md:p-6" onSubmit={handleProfileSubmit}>
           <div className="flex items-start gap-4">
             <Avatar className="h-16 w-16">
               <AvatarImage src={user.avatar} alt={user.name} />
@@ -304,6 +315,7 @@ export default function SettingsPage() {
           </Button>
         </form>
       </section>
+      </div>
     </div>
   )
 }

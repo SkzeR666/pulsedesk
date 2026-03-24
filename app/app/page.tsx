@@ -1,31 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useMemo, useState } from "react"
 import { useApp } from "@/lib/app-context"
 import { RequestList } from "@/components/app/request-list"
 import { RequestDetail } from "@/components/app/request-detail"
-import { RequestEmptyState } from "@/components/app/request-empty-state"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  EmptyPanel,
-  HeaderCountBadge,
-  PageHeader,
-  PageShell,
-  PageToolbar,
-  SegmentedTabs,
-} from "@/components/app/page-shell"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuCheckboxItem,
-} from "@/components/ui/dropdown-menu"
-import { Search, SlidersHorizontal, Inbox, Clock, CheckCircle, Loader2, Sparkles } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Search, X } from "lucide-react"
 import type { Request } from "@/lib/types"
+import { cn } from "@/lib/utils"
 
 type StatusFilter = Request["status"] | "all"
 type PriorityFilter = Request["priority"] | "all"
@@ -35,164 +19,131 @@ export default function InboxPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all")
-  const [isSearchFocused, setIsSearchFocused] = useState(false)
+  const [showDetail, setShowDetail] = useState(false)
 
   // Filter requests
-  const filteredRequests = requests.filter((r) => {
-    const matchesSearch =
-      r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.description.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === "all" || r.status === statusFilter
-    const matchesPriority = priorityFilter === "all" || r.priority === priorityFilter
-    return matchesSearch && matchesStatus && matchesPriority
-  })
+  const filteredRequests = useMemo(() => {
+    return requests.filter((r) => {
+      const matchesSearch =
+        r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r.description.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesStatus = statusFilter === "all" || r.status === statusFilter
+      const matchesPriority = priorityFilter === "all" || r.priority === priorityFilter
+      return matchesSearch && matchesStatus && matchesPriority
+    })
+  }, [priorityFilter, requests, searchQuery, statusFilter])
 
-  // Get selected request
-  const selectedRequest = filteredRequests.find((r) => r.id === selectedRequestId) ?? null
+  const selectedRequest = requests.find((r) => r.id === selectedRequestId) ?? null
 
-  // Keep the detail panel in sync with the active filtered list.
-  useEffect(() => {
-    if (filteredRequests.length === 0) {
-      if (selectedRequestId) {
-        setSelectedRequestId(null)
-      }
-      return
-    }
-
-    const stillVisible = filteredRequests.some((request) => request.id === selectedRequestId)
-    if (!selectedRequestId || !stillVisible) {
-      setSelectedRequestId(filteredRequests[0].id)
-    }
-  }, [selectedRequestId, filteredRequests, setSelectedRequestId])
-
-  const openCount = requests.filter((r) => r.status === "open").length
-  const inProgressCount = requests.filter((r) => r.status === "in_progress").length
-  const waitingCount = requests.filter((r) => r.status === "waiting").length
-
-  const statusTabs = [
-    { value: "all", label: "Todos", count: requests.length, icon: Inbox },
-    { value: "open", label: "Abertos", count: openCount, icon: Sparkles },
-    { value: "in_progress", label: "Em Progresso", count: inProgressCount, icon: Loader2 },
-    { value: "waiting", label: "Aguardando", count: waitingCount, icon: Clock },
-  ]
-
-  const hasActiveFilters = statusFilter !== "all" || priorityFilter !== "all"
+  const handleSelect = (id: string) => {
+    setSelectedRequestId(id)
+    setShowDetail(true)
+  }
 
   return (
-    <PageShell>
-      <PageHeader
-        title="Inbox"
-        description="Gerencie todos os requests da operacao em um fluxo unico."
-        badge={<HeaderCountBadge>{filteredRequests.length} visiveis</HeaderCountBadge>}
-        actions={
-          <>
-          <div className={`relative transition-all duration-300 ${isSearchFocused ? "w-80" : "w-64"}`}>
-            <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors ${isSearchFocused ? "text-foreground" : "text-muted-foreground"}`} />
-            <Input
-              placeholder="Buscar requests..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setIsSearchFocused(false)}
-              className="pl-10 h-10 rounded-xl border-muted bg-muted/50 focus:bg-background transition-all"
-            />
+    <div className="flex h-dvh min-w-0">
+      {/* Left: list */}
+      <section className="flex w-full flex-col border-r border-border/60 md:w-[420px]">
+        <header className="shrink-0 bg-background px-4 py-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-balance text-lg font-semibold tracking-tight">Inbox</h1>
+              <p className="mt-0.5 text-pretty text-sm text-muted-foreground">
+                {filteredRequests.length} requests
+              </p>
+            </div>
+            <Badge variant="secondary" className="tabular-nums">
+              {requests.length}
+            </Badge>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className={`h-10 rounded-xl transition-all ${
-                  hasActiveFilters
-                    ? "border-primary/50 bg-accent/20 text-foreground hover:bg-accent/30"
-                    : ""
-                }`}
-              >
-                <SlidersHorizontal className="h-4 w-4 mr-2" />
-                Filtros
-                {hasActiveFilters && (
-                  <Badge variant="secondary" className="ml-2 h-5 border-primary/20 bg-background/80 px-1.5 text-foreground">
-                    {(statusFilter !== "all" ? 1 : 0) + (priorityFilter !== "all" ? 1 : 0)}
-                  </Badge>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52 rounded-xl p-2">
-              <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Prioridade
-              </div>
-              {[
-                { value: "all", label: "Todas" },
-                { value: "urgent", label: "Urgente" },
-                { value: "high", label: "Alta" },
-                { value: "medium", label: "Media" },
-                { value: "low", label: "Baixa" },
-              ].map((item) => (
-                <DropdownMenuCheckboxItem
+
+          <div className="mt-4 flex flex-col gap-3">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por título ou descrição..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+              {searchQuery ? (
+                <button
+                  type="button"
+                  aria-label="Limpar busca"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              ) : null}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {([
+                { value: "all", label: "Todos" },
+                { value: "open", label: "Abertos" },
+                { value: "in_progress", label: "Em andamento" },
+              ] as const).map((item) => (
+                <Button
                   key={item.value}
-                  checked={priorityFilter === item.value}
-                  onCheckedChange={() => setPriorityFilter(item.value as PriorityFilter)}
-                  className="rounded-lg"
+                  type="button"
+                  variant={statusFilter === item.value ? "secondary" : "ghost"}
+                  size="sm"
+                  className={cn(
+                    "px-2.5",
+                    statusFilter === item.value && "bg-muted text-foreground"
+                  )}
+                  onClick={() => setStatusFilter(item.value as StatusFilter)}
                 >
                   {item.label}
-                </DropdownMenuCheckboxItem>
+                </Button>
               ))}
-              {hasActiveFilters && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={() => { setStatusFilter("all"); setPriorityFilter("all") }}
-                    className="rounded-lg text-muted-foreground"
-                  >
-                    Limpar filtros
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          </>
-        }
-      />
+            </div>
+          </div>
+        </header>
 
-      <PageToolbar>
-        <SegmentedTabs
-          items={statusTabs.map((tab) => ({
-            value: tab.value,
-            label: tab.label,
-            count: tab.count,
-            icon: <tab.icon className={`h-4 w-4 ${tab.value === "in_progress" && statusFilter === tab.value ? "animate-spin" : ""}`} />,
-          }))}
-          active={statusFilter}
-          onChange={(value) => setStatusFilter(value as StatusFilter)}
-        />
-      </PageToolbar>
-
-      <div className="flex flex-1 min-h-0 overflow-hidden">
-        <div className="w-[420px] border-r border-border overflow-hidden flex flex-col shrink-0 bg-muted/20">
-          <RequestList
-            requests={filteredRequests}
-            selectedId={selectedRequestId}
-            onSelect={setSelectedRequestId}
-          />
+        <div className="min-h-0 flex-1">
+          <RequestList requests={filteredRequests} selectedId={selectedRequestId} onSelect={handleSelect} />
         </div>
+      </section>
 
-        {/* Request Detail */}
-        <div className="flex-1 overflow-hidden bg-background">
-          {selectedRequest ? (
+      {/* Right: detail */}
+      <section className="hidden min-w-0 flex-1 md:flex">
+        {selectedRequest ? (
+          <div className="min-w-0 flex-1">
             <RequestDetail request={selectedRequest} />
-          ) : (
-            (filteredRequests.length === 0 ? (
-              <EmptyPanel
-                icon={<Inbox className="h-6 w-6 text-muted-foreground" />}
-                title="Nenhum request encontrado"
-                description="Ajuste busca ou filtros para encontrar o que voce precisa."
-              />
-            ) : (
-              <RequestEmptyState />
-            ))
-          )}
+          </div>
+        ) : (
+          <div className="flex min-w-0 flex-1 items-center justify-center p-8">
+            <div className="max-w-sm text-center">
+              <h2 className="text-balance text-base font-semibold">Selecione um request</h2>
+              <p className="mt-1 text-pretty text-sm text-muted-foreground">
+                Abra um item na lista para ver detalhes e responder.
+              </p>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Mobile detail overlay (preserva comportamento atual de abrir/fechar) */}
+      {selectedRequest && showDetail ? (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-background">
+            <button
+              type="button"
+              aria-label="Fechar detalhes"
+              onClick={() => setShowDetail(false)}
+              className="absolute right-3 top-3 z-10 inline-flex size-10 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="h-full overflow-hidden">
+              <RequestDetail request={selectedRequest} />
+            </div>
+          </div>
         </div>
-      </div>
-    </PageShell>
+      ) : null}
+    </div>
   )
 }

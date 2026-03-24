@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { NewViewModal } from "@/components/app/new-view-modal"
 import { EmptyPanel, HeaderCountBadge, PageHeader, PageShell } from "@/components/app/page-shell"
+import { Separator } from "@/components/ui/separator"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +44,7 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 const viewIcons: Record<string, React.ElementType> = {
   inbox: Inbox,
@@ -107,14 +109,14 @@ export default function ViewsPage() {
         <NewViewModal open={isNewViewOpen} onOpenChange={setIsNewViewOpen} />
 
         <PageHeader
-          title="Views"
-          description="Colecoes salvas para acompanhar listas filtradas com menos atrito."
+          title="Setores"
+          description="Coleções salvas para acompanhar listas filtradas por setor ou critério."
           badge={<HeaderCountBadge>0 salvas</HeaderCountBadge>}
           actions={
             canManageViews ? (
               <Button variant="outline" onClick={() => setIsNewViewOpen(true)}>
                 <Plus className="h-4 w-4" />
-                <span className="ml-2">Nova view</span>
+                <span className="ml-2">Novo setor</span>
               </Button>
             ) : null
           }
@@ -122,8 +124,8 @@ export default function ViewsPage() {
 
         <EmptyPanel
           icon={<LayoutGrid className="h-6 w-6 text-muted-foreground" />}
-          title="Nenhuma view salva"
-          description="Crie a primeira view para organizar seus requests."
+          title="Nenhum setor salvo"
+          description="Crie o primeiro setor para organizar seus requests."
         />
       </PageShell>
     )
@@ -140,11 +142,11 @@ export default function ViewsPage() {
       <AlertDialog open={Boolean(deletingView)} onOpenChange={(open) => !open && setDeletingViewId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir view</AlertDialogTitle>
+            <AlertDialogTitle>Excluir setor</AlertDialogTitle>
             <AlertDialogDescription>
               {deletingView
-                ? `A view "${deletingView.name}" sera removida da workspace.`
-                : "Essa view sera removida da workspace."}
+                ? `O setor "${deletingView.name}" será removido da workspace.`
+                : "Este setor será removido da workspace."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -157,174 +159,186 @@ export default function ViewsPage() {
       </AlertDialog>
 
       <PageHeader
-        title="Views"
-        description="Colecoes salvas para acompanhar listas filtradas com menos atrito."
+        title="Setores"
+        description="Coleções salvas para acompanhar listas filtradas por setor ou critério."
         badge={<HeaderCountBadge>{views.length} salvas</HeaderCountBadge>}
         actions={
           canManageViews ? (
             <Button variant="outline" onClick={() => setIsNewViewOpen(true)}>
               <Plus className="h-4 w-4" />
-              <span className="ml-2">Nova view</span>
+              <span className="ml-2">Novo setor</span>
             </Button>
           ) : null
         }
       />
 
       <div className="flex min-h-0 flex-1">
-      <div className="w-72 border-r border-border overflow-auto shrink-0 bg-background">
-        <div className="border-b border-border px-5 py-4">
-          <p className="text-sm font-medium text-foreground">Colecoes</p>
-          <p className="mt-1 text-xs text-muted-foreground">Views salvas para triagem rapida.</p>
-        </div>
-
-        <div className="space-y-1 px-3 py-3">
-          {views.map((view) => {
-            const Icon = viewIcons[view.icon] || LayoutGrid
-            const count = filterRequests(view.id).length
-            const isActive = activeViewId === view.id
-
-            return (
-              <div
-                key={view.id}
-                className={`group flex items-center gap-2 border px-2 py-1.5 transition-colors ${
-                  isActive
-                    ? "border-border bg-muted/40"
-                    : "border-transparent hover:border-border/70 hover:bg-muted/20"
-                }`}
-              >
-                <button
-                  onClick={() => router.push(`/app/views?view=${view.id}`)}
-                  className={`flex min-w-0 flex-1 items-center justify-between gap-3 px-1 py-1 text-sm ${
-                    isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <span className="flex min-w-0 items-center gap-3">
-                    <span className={`flex h-8 w-8 items-center justify-center border ${
-                      isActive ? "border-border bg-background text-foreground" : "border-border/70 bg-muted/10 text-muted-foreground"
-                    }`}>
-                      <Icon className="h-4 w-4 shrink-0" />
-                    </span>
-                    <span className="truncate font-medium">{view.name}</span>
-                  </span>
-                  <span className={`min-w-6 text-right text-xs tabular-nums ${isActive ? "text-foreground/80" : "text-muted-foreground"}`}>
-                    {count}
-                  </span>
-                </button>
-
-                {canManageViews && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={`h-8 w-8 rounded-md ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setEditingViewId(view.id)}>
-                        <Pencil className="h-4 w-4" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setDeletingViewId(view.id)}
-                        className="text-red-600 focus:text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="flex items-center justify-between border-b border-border px-6 py-4 shrink-0">
-          <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold">{activeView.name}</h2>
-            <Badge variant="secondary" className="rounded-md">{filteredRequests.length} requests</Badge>
+        {/* Left rail */}
+        <aside className="w-72 shrink-0 border-r border-border bg-background">
+          <div className="border-b border-border px-5 py-4">
+            <p className="text-sm font-medium text-foreground">Coleções</p>
+            <p className="mt-1 text-xs text-muted-foreground">Setores salvos para triagem rápida.</p>
           </div>
-          {canManageViews && (
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setEditingViewId(activeView.id)}>
-                <Pencil className="h-4 w-4" />
-                <span className="ml-2">Editar</span>
-              </Button>
-            </div>
-          )}
-        </header>
 
-        <div className="flex-1 overflow-auto">
-          {filteredRequests.length === 0 ? (
-            <EmptyPanel
-              icon={<LayoutGrid className="h-6 w-6 text-muted-foreground" />}
-              title="Nenhum request"
-              description="Nao ha requests nesta view no momento."
-            />
-          ) : (
-            <div className="divide-y divide-border">
-              {filteredRequests.map((request) => {
-                const requester = users.find((user) => user.id === request.requesterId)
-                const assignee = request.assigneeId
-                  ? users.find((user) => user.id === request.assigneeId)
-                  : null
-                const team = teams.find((item) => item.id === request.teamId)
+          <div className="h-[calc(100dvh-220px)] overflow-auto p-2">
+            <ul className="space-y-1">
+              {views.map((view) => {
+                const Icon = viewIcons[view.icon] || LayoutGrid
+                const count = filterRequests(view.id).length
+                const isActive = activeViewId === view.id
 
                 return (
-                  <button
-                    key={request.id}
-                    onClick={() => handleRequestClick(request.id)}
-                    className="flex items-center gap-4 w-full px-6 py-4 text-left hover:bg-secondary/50 transition-colors"
-                  >
+                  <li key={view.id} className="group">
                     <div
-                      className={`w-1.5 h-12 rounded-full shrink-0 ${
-                        request.priority === "urgent"
-                          ? "bg-red-500"
-                          : request.priority === "high"
-                            ? "bg-orange-400"
-                            : request.priority === "medium"
-                              ? "bg-blue-400"
-                              : "bg-zinc-300"
-                      }`}
-                    />
+                      className={cn(
+                        "flex items-center gap-2 rounded-md px-2 py-1.5",
+                        isActive ? "bg-muted" : "hover:bg-muted/50"
+                      )}
+                    >
+                      <button
+                        onClick={() => router.push(`/app/views?view=${view.id}`)}
+                        className={cn(
+                          "flex min-w-0 flex-1 items-center justify-between gap-3 text-left text-sm",
+                          isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <span className="flex min-w-0 items-center gap-3">
+                          <span
+                            className={cn(
+                              "flex h-8 w-8 items-center justify-center rounded-md border",
+                              isActive ? "border-border bg-background text-foreground" : "border-border/70 bg-background text-muted-foreground"
+                            )}
+                          >
+                            <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                          </span>
+                          <span className="truncate font-medium">{view.name}</span>
+                        </span>
+                        <span className="min-w-6 text-right text-xs tabular-nums text-muted-foreground">{count}</span>
+                      </button>
 
-                    <Avatar className="h-8 w-8 shrink-0">
-                      <AvatarImage src={requester?.avatar} />
-                      <AvatarFallback>{requester?.name?.[0]}</AvatarFallback>
-                    </Avatar>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge className={`${statusColors[request.status]} border-0 text-xs`}>
-                          {statusLabels[request.status]}
-                        </Badge>
-                      </div>
-                      <p className="font-medium truncate">{request.title}</p>
-                      <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-                        <span>{requester?.name}</span>
-                        <span>{team?.name}</span>
-                        {assignee && <span>{assignee.name}</span>}
-                      </div>
+                      {canManageViews && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Ações do setor"
+                              className={cn("h-8 w-8 rounded-md", isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100")}
+                            >
+                              <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setEditingViewId(view.id)}>
+                              <Pencil className="h-4 w-4" aria-hidden="true" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setDeletingViewId(view.id)}
+                              className="text-red-600 focus:text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4" aria-hidden="true" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
-
-                    <span className="text-xs text-muted-foreground shrink-0 flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {formatDistanceToNow(request.updatedAt)}
-                    </span>
-
-                    <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
-                  </button>
+                  </li>
                 )
               })}
+            </ul>
+          </div>
+        </aside>
+
+        {/* Main */}
+        <section className="min-w-0 flex-1">
+          <header className="shrink-0 border-b border-border bg-background px-6 py-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h2 className="text-balance text-lg font-semibold">{activeView.name}</h2>
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  {filteredRequests.length} requests neste setor
+                </p>
+              </div>
+              {canManageViews ? (
+                <Button variant="outline" size="sm" onClick={() => setEditingViewId(activeView.id)}>
+                  <Pencil className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Editar
+                </Button>
+              ) : null}
             </div>
-          )}
-        </div>
-      </div>
+          </header>
+
+          <div className="min-h-0 overflow-auto">
+            {filteredRequests.length === 0 ? (
+              <EmptyPanel
+                icon={<LayoutGrid className="h-6 w-6 text-muted-foreground" />}
+                title="Nenhum request"
+                description="Não há requests neste setor no momento."
+              />
+            ) : (
+              <div className="divide-y divide-border">
+                {filteredRequests.map((request) => {
+                  const requester = users.find((user) => user.id === request.requesterId)
+                  const assignee = request.assigneeId ? users.find((user) => user.id === request.assigneeId) : null
+                  const team = teams.find((item) => item.id === request.teamId)
+
+                  return (
+                    <button
+                      key={request.id}
+                      onClick={() => handleRequestClick(request.id)}
+                      className="flex w-full items-center gap-4 px-6 py-4 text-left transition-colors hover:bg-muted/40"
+                    >
+                      <div
+                        className={cn(
+                          "h-12 w-1.5 shrink-0 rounded-full",
+                          request.priority === "urgent"
+                            ? "bg-destructive"
+                            : request.priority === "high"
+                              ? "bg-orange-500"
+                              : request.priority === "medium"
+                                ? "bg-blue-500"
+                                : "bg-muted-foreground"
+                        )}
+                        aria-hidden="true"
+                      />
+
+                      <Avatar className="h-8 w-8 shrink-0">
+                        <AvatarImage src={requester?.avatar} alt={requester?.name ?? "Usuário"} />
+                        <AvatarFallback>{requester?.name?.[0]}</AvatarFallback>
+                      </Avatar>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <Badge className={cn(statusColors[request.status], "border-0 text-xs")}>
+                            {statusLabels[request.status]}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground font-mono tabular-nums">
+                            #{request.id.slice(0, 8)}
+                          </span>
+                        </div>
+                        <p className="mt-1 truncate font-medium">{request.title}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                          <span className="truncate">{requester?.name}</span>
+                          {team?.name ? <span className="truncate">{team.name}</span> : null}
+                          {assignee ? <span className="truncate">resp. {assignee.name}</span> : null}
+                        </div>
+                      </div>
+
+                      <span className="hidden shrink-0 items-center gap-1 text-xs text-muted-foreground md:flex">
+                        <Clock className="h-3 w-3" aria-hidden="true" />
+                        {formatDistanceToNow(request.updatedAt)}
+                      </span>
+
+                      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </PageShell>
   )

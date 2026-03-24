@@ -198,15 +198,15 @@ export default function PlatformPage() {
 
   if (loading || isFetching) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-dvh flex items-center justify-center">
         <Spinner className="h-5 w-5" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto p-6 md:p-10 space-y-6">
+    <div className="min-h-dvh bg-background">
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-10 md:py-10">
         <div className="flex items-center justify-between gap-4">
           <div>
             <Link
@@ -216,8 +216,8 @@ export default function PlatformPage() {
               <ArrowLeft className="h-4 w-4" />
               Voltar ao app
             </Link>
-            <h1 className="text-3xl font-bold tracking-tight mt-3">Platform Admin</h1>
-            <p className="text-muted-foreground mt-2">
+            <h1 className="mt-3 text-balance text-2xl font-semibold tracking-tight md:text-3xl">Platform Admin</h1>
+            <p className="mt-2 text-pretty text-sm text-muted-foreground">
               Controle global do produto, dos workspaces e dos acessos da plataforma.
             </p>
           </div>
@@ -238,7 +238,7 @@ export default function PlatformPage() {
         </div>
 
         {error && (
-          <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         )}
@@ -277,7 +277,7 @@ export default function PlatformPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {data?.workspaces.slice(0, 5).map((workspace) => (
-                    <div key={workspace.id} className="rounded-xl border p-4 flex items-center justify-between gap-4">
+                    <div key={workspace.id} className="rounded-lg border border-border p-4 flex items-center justify-between gap-4">
                       <div>
                         <div className="font-medium">{workspace.name}</div>
                         <div className="text-sm text-muted-foreground">
@@ -300,7 +300,7 @@ export default function PlatformPage() {
                 <CardContent className="space-y-3">
                   {data?.codes.flatMap((code) =>
                     code.redemptions.map((redemption) => (
-                      <div key={redemption.id} className="rounded-xl border p-4 flex items-center justify-between gap-4">
+                      <div key={redemption.id} className="rounded-lg border border-border p-4 flex items-center justify-between gap-4">
                         <div>
                           <div className="font-medium">{redemption.redeemed_email}</div>
                           <div className="text-sm text-muted-foreground">

@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Spinner } from "@/components/ui/spinner"
 import { Badge } from "@/components/ui/badge"
 import { useApp } from "@/lib/app-context"
+import { PageContent } from "@/components/app/page-shell"
 import { Building2, Pencil, Plus, Trash2, Users } from "lucide-react"
 
 export default function TeamsPage() {
@@ -96,10 +97,11 @@ export default function TeamsPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 p-6">
+    <PageContent>
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
       <div className="flex items-start justify-between gap-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Setores</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-balance">Setores</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Os setores iniciais sao so um ponto de partida. O admin do workspace pode criar, renomear e apagar conforme a operacao real da empresa.
           </p>
@@ -252,6 +254,7 @@ export default function TeamsPage() {
           </div>
         </section>
       </div>
-    </div>
+      </div>
+    </PageContent>
   )
 }

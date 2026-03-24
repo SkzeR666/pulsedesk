@@ -142,11 +142,11 @@ export function NewViewModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="overflow-hidden p-0 sm:max-w-[640px]">
         <DialogHeader className="border-b border-border px-6 py-5">
-          <DialogTitle>{initialView ? "Editar View" : "Nova View"}</DialogTitle>
+          <DialogTitle>{initialView ? "Editar setor" : "Novo setor"}</DialogTitle>
           <DialogDescription>
             {initialView
-              ? "Atualize nome, icone e filtros da view."
-              : "Crie uma view personalizada com filtros especificos."}
+              ? "Atualize nome, ícone e filtros do setor."
+              : "Crie um setor personalizado com filtros específicos."}
           </DialogDescription>
         </DialogHeader>
 
@@ -156,7 +156,7 @@ export function NewViewModal({
             <Label htmlFor="view-name">Nome</Label>
             <Input
               id="view-name"
-              placeholder="Ex: Meus urgentes"
+              placeholder="Ex: Financeiro - urgentes"
               value={formData.name}
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
@@ -257,7 +257,7 @@ export function NewViewModal({
             </Button>
             <Button type="submit" disabled={!isValid || isSubmitting}>
               {isSubmitting && <Spinner className="mr-2" />}
-              {initialView ? "Salvar view" : "Criar view"}
+              {initialView ? "Salvar setor" : "Criar setor"}
             </Button>
           </div>
         </form>

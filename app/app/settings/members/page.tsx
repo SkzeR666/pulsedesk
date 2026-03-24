@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { InviteMemberModal } from "@/components/app/invite-member-modal"
+import { PageContent } from "@/components/app/page-shell"
 import { useApp } from "@/lib/app-context"
 import { formatDate } from "@/lib/date-utils"
 import { Search, UserPlus, MoreHorizontal, Mail, Shield, UserX, Users, Building2 } from "lucide-react"
@@ -46,12 +47,13 @@ export default function MembersPage() {
   const pendingInvites = invitations.filter((invitation) => invitation.status === "pending").length
 
   return (
-    <div className="p-6">
+    <PageContent>
+      <div className="mx-auto w-full max-w-6xl">
       <InviteMemberModal open={isInviteOpen} onOpenChange={setIsInviteOpen} />
 
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Membros</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-balance">Membros</h1>
           <p className="text-muted-foreground mt-1">Gerencie os membros do workspace e convites.</p>
         </div>
 
@@ -197,6 +199,7 @@ export default function MembersPage() {
           ))}
         </div>
       </div>
-    </div>
+      </div>
+    </PageContent>
   )
 }

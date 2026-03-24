@@ -130,7 +130,7 @@ export default function ArticlePage({ params }: ArticlePageProps) {
       </header>
 
       <div className="flex-1 overflow-auto">
-        <div className="max-w-3xl mx-auto px-6 py-8">
+        <div className="mx-auto max-w-3xl px-4 py-6 md:px-6 md:py-8">
           <div className="mb-8">
             <Badge variant="secondary" className="mb-4">
               {article.category}
@@ -156,7 +156,7 @@ export default function ArticlePage({ params }: ArticlePageProps) {
             </div>
           </div>
 
-          <div className="rounded-lg border border-border bg-card p-6">
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
             <ArticleContent content={article.content} />
           </div>
 

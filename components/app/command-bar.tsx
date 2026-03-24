@@ -27,7 +27,7 @@ import {
 const pages = [
   { icon: Inbox, label: "Inbox", href: "/app" },
   { icon: CheckSquare, label: "Minhas Tarefas", href: "/app/my-tasks" },
-  { icon: LayoutGrid, label: "Views", href: "/app/views" },
+  { icon: LayoutGrid, label: "Setores", href: "/app/views" },
   { icon: MessageSquareMore, label: "Chat geral", href: "/app/chat" },
   { icon: BookOpen, label: "Artigos internos", href: "/app/knowledge" },
   { icon: Settings, label: "Configuracoes", href: "/app/settings" },
@@ -155,7 +155,7 @@ export function CommandBar() {
 
         {search && filteredViews.length > 0 && (
           <>
-            <CommandGroup heading="Views">
+            <CommandGroup heading="Setores">
               {filteredViews.map((view) => (
                 <CommandItem
                   key={view.id}

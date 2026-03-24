@@ -44,6 +44,30 @@ export function PageToolbar({ children }: { children: ReactNode }) {
   return <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/20 px-6 py-3">{children}</div>
 }
 
+export function PageContent({ children }: { children: ReactNode }) {
+  return <div className="flex-1 overflow-auto px-4 py-5 md:px-6 md:py-6">{children}</div>
+}
+
+export function PageSection({
+  title,
+  description,
+  children,
+}: {
+  title: string
+  description?: string
+  children: ReactNode
+}) {
+  return (
+    <section className="py-2">
+      <div className="px-1">
+        <h2 className="text-base font-semibold text-balance">{title}</h2>
+        {description ? <p className="mt-1 text-sm text-muted-foreground text-pretty">{description}</p> : null}
+      </div>
+      <div className="mt-3">{children}</div>
+    </section>
+  )
+}
+
 export function SegmentedTabs({
   items,
   active,
@@ -93,7 +117,7 @@ export function EmptyPanel({
   return (
     <div className="flex h-full items-center justify-center p-8">
       <div className="max-w-sm text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-border bg-muted/40">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-muted/40">
           {icon}
         </div>
         <h2 className="text-lg font-semibold">{title}</h2>

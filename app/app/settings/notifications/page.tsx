@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Spinner } from "@/components/ui/spinner"
 import { useApp } from "@/lib/app-context"
+import { PageContent, PageSection } from "@/components/app/page-shell"
 import { Bell, MessageSquare, CheckCircle } from "lucide-react"
 
 const notificationSections = [
@@ -67,9 +68,10 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="p-6 max-w-2xl">
+    <PageContent>
+      <div className="mx-auto w-full max-w-2xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Notificacoes</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-balance">Notificações</h1>
         <p className="text-muted-foreground mt-1">
           Configure como e quando voce recebe notificacoes.
         </p>
@@ -77,10 +79,9 @@ export default function NotificationsPage() {
 
       <div className="space-y-8">
         {notificationSections.map((section) => (
-          <section key={section.category}>
-            <div className="flex items-center gap-2 mb-4">
+          <PageSection key={section.category} title={section.category}>
+            <div className="flex items-center gap-2 mb-3">
               <section.icon className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">{section.category}</h2>
             </div>
 
             <div className="rounded-lg border border-border">
@@ -114,14 +115,13 @@ export default function NotificationsPage() {
                 ))}
               </div>
             </div>
-          </section>
+          </PageSection>
         ))}
       </div>
 
       <Separator className="my-8" />
 
-      <section className="mb-8">
-        <h2 className="text-lg font-semibold mb-4">Resumo por email</h2>
+      <PageSection title="Resumo por email">
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 rounded-lg border border-border">
             <div>
@@ -148,11 +148,12 @@ export default function NotificationsPage() {
             />
           </div>
         </div>
-      </section>
+      </PageSection>
 
       <Button onClick={handleSave} disabled={isSaving}>
         {isSaving ? <Spinner className="h-4 w-4" /> : "Salvar preferencias"}
       </Button>
-    </div>
+      </div>
+    </PageContent>
   )
 }

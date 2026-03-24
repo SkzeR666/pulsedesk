@@ -100,7 +100,7 @@ export default function KnowledgePage() {
             description="Tente ajustar sua busca ou filtros."
           />
         ) : (
-          <div className="grid grid-cols-1 gap-5 p-6 lg:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 p-4 md:p-6 lg:grid-cols-2 xl:grid-cols-3">
             {filteredArticles.map((article) => {
               const author = users.find((user) => user.id === article.authorId)
               const preview = getArticlePreview(article.content)
@@ -109,11 +109,11 @@ export default function KnowledgePage() {
                 <Link
                   key={article.id}
                   href={`/app/knowledge/${article.id}`}
-                  className="group flex min-h-[220px] flex-col rounded-xl border border-border bg-card p-5 transition-colors hover:bg-muted/30"
+                  className="group flex min-h-[220px] flex-col rounded-xl bg-muted/20 p-5 transition-colors hover:bg-muted/30"
                 >
                   <div className="mb-4 flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-md bg-secondary">
+                      <div className="rounded-md bg-muted/40 p-1.5">
                         <FileText className="h-4 w-4 text-foreground" />
                       </div>
                       <Badge variant="secondary" className="text-xs">

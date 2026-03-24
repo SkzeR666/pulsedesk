@@ -10,6 +10,7 @@ interface MediaUploadButtonProps {
   label?: string
   variant?: "default" | "outline" | "ghost" | "secondary"
   size?: "default" | "sm"
+  className?: string
 }
 
 export function MediaUploadButton({
@@ -17,6 +18,7 @@ export function MediaUploadButton({
   label = "Enviar imagem",
   variant = "outline",
   size = "sm",
+  className,
 }: MediaUploadButtonProps) {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -67,6 +69,7 @@ export function MediaUploadButton({
         type="button"
         variant={variant}
         size={size}
+        className={className}
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
       >

@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { Separator } from "@/components/ui/separator"
 import {
   Select,
   SelectContent,
@@ -27,19 +28,12 @@ import { statusLabels, statusColors, priorityLabels } from "@/lib/constants"
 import { formatDate, formatDistanceToNow } from "@/lib/date-utils"
 import {
   CheckCircle2,
-  Clock,
-  MessageSquare,
   Send,
-  MoreHorizontal,
   RotateCcw,
-  XCircle,
-  Paperclip,
-  Hash,
-  Users,
   Calendar,
-  ArrowUpRight,
   Sparkles,
 } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface RequestDetailProps {
   request: Request
@@ -145,384 +139,258 @@ export function RequestDetail({ request }: RequestDetailProps) {
   }, [request.id])
 
   return (
-    <div className="flex h-full">
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header */}
-        <div className="px-8 py-6 border-b border-border shrink-0 bg-gradient-to-b from-muted/30 to-transparent">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 animate-fade-in">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded-md">
-                  <Hash className="h-3 w-3" />
-                  {request.id}
-                </span>
-                <Badge className={`${statusColors[request.status]} border-0 shadow-sm`}>
-                  {statusLabels[request.status]}
-                </Badge>
-                <Badge className={`${priorityColors[request.priority]} border-0`}>
-                  {priorityLabels[request.priority]}
-                </Badge>
-              </div>
-              <h1 className="text-2xl font-semibold text-balance tracking-tight">{request.title}</h1>
+    <div className="flex h-dvh min-w-0 flex-col bg-background">
+      {/* Header */}
+      <header className="shrink-0 bg-background px-4 py-4 md:px-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary" className="font-mono text-[11px] tabular-nums">
+                #{request.id.slice(0, 8)}
+              </Badge>
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-medium",
+                  statusColors[request.status]
+                )}
+              >
+                {statusLabels[request.status]}
+              </span>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {isResolved ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleReopen}
-                  className="rounded-xl"
-                  disabled={!isWorkspaceAdmin}
-                >
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Reabrir
-                </Button>
-              ) : (
-                <Button size="sm" onClick={handleResolve} className="rounded-xl shadow-sm" disabled={!canChangeStatus}>
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Resolver
-                </Button>
-              )}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="ghost" className="rounded-xl">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="rounded-xl">
-                  <DropdownMenuItem
-                    onClick={() => handleStatusChange("closed")}
-                    className="rounded-lg"
-                    disabled={!canChangeStatus}
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Fechar request
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            <h1 className="mt-2 text-balance text-xl font-semibold tracking-tight md:text-2xl">
+              {request.title}
+            </h1>
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Avatar className="h-6 w-6">
+                  <AvatarImage src={requester?.avatar} alt={requester?.name ?? "Usuário"} />
+                  <AvatarFallback>{requester?.name?.[0]}</AvatarFallback>
+                </Avatar>
+                <span className="truncate">{requester?.name}</span>
+              </div>
+              <span className="hidden md:inline">•</span>
+              <span className="flex items-center gap-1.5">
+                <Calendar className="h-4 w-4" aria-hidden="true" />
+                <span className="tabular-nums">{formatDate(request.createdAt)}</span>
+              </span>
             </div>
           </div>
-        </div>
 
-        {/* Description */}
-        <div className="px-8 py-6 border-b border-border shrink-0">
-          <p className="text-muted-foreground leading-relaxed">
-            {request.description || "Sem descricao."}
-          </p>
-
-          <div className="mt-5 border border-border bg-card">
-            <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-              <div>
-                <p className="text-sm font-medium">Resumo de contexto</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Gera um panorama rapido do ticket com base na descricao e comentarios.
-                </p>
-              </div>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="h-9 rounded-md"
-                onClick={() => void handleSummarize()}
-                disabled={isSummarizing}
-              >
-                {isSummarizing ? <Spinner className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
-                <span className="ml-2">{summary ? "Atualizar resumo" : "Resumir contexto"}</span>
+          <div className="flex shrink-0 items-center gap-2">
+            {!isResolved ? (
+              <Button type="button" onClick={handleResolve}>
+                <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden="true" />
+                Resolver
               </Button>
-            </div>
-
-            {summaryError ? (
-              <p className="px-4 py-3 text-sm text-red-600">{summaryError}</p>
-            ) : summary ? (
-              <div className="px-4 py-4">
-                <p className="text-sm leading-7 text-foreground/88">{summary.summary}</p>
-              </div>
             ) : (
-              <div className="px-4 py-4 text-sm text-muted-foreground">
-                Gere um resumo quando quiser bater o olho no ticket sem ler tudo de novo.
-              </div>
+              <Button type="button" variant="outline" onClick={handleReopen}>
+                <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
+                Reabrir
+              </Button>
             )}
           </div>
-          
-          {/* Attachments Preview */}
-          {request.attachments && request.attachments.length > 0 && (
-            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border">
-              <Paperclip className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                {request.attachments.length} anexo(s)
-              </span>
-              {request.attachments.map((attachment, i) => (
-                <button
-                  key={i}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-muted text-xs hover:bg-muted/80 transition-colors"
-                >
-                  {attachment}
-                  <ArrowUpRight className="h-3 w-3" />
-                </button>
-              ))}
-            </div>
-          )}
         </div>
+      </header>
 
-        {/* Timeline / Comments */}
-        <div className="flex-1 overflow-auto px-8 py-6">
-          <div className="flex items-center gap-2 mb-6">
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-medium">Atividade</h2>
-            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-              {requestComments.length}
-            </span>
-          </div>
-          
-          {requestComments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-3">
-                <MessageSquare className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <p className="text-sm text-muted-foreground">Nenhum comentario ainda</p>
-              <p className="text-xs text-muted-foreground/70 mt-1">Seja o primeiro a comentar</p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {requestComments.map((c, index) => {
-                const author = users.find((item) => item.id === c.authorId)
-                return (
-                  <div 
-                    key={c.id} 
-                    className="flex gap-4 animate-fade-in opacity-0"
-                    style={{ animationDelay: `${index * 100}ms` }}
+      {/* Body */}
+      <div className="min-h-0 flex-1 overflow-auto">
+        <div className="mx-auto w-full max-w-5xl px-4 py-6 md:px-6">
+          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+            {/* Main column */}
+            <div className="min-w-0 space-y-8">
+              <section>
+                <h2 className="text-sm font-semibold">Descrição</h2>
+                <p className="mt-2 text-pretty text-sm leading-6 text-muted-foreground">
+                  {request.description || "Nenhum dado capturado no briefing."}
+                </p>
+              </section>
+
+              <Separator />
+
+              <section>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />
+                      <h2 className="text-sm font-semibold">Resumo IA</h2>
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Gere um resumo rápido do contexto e sugestões de resposta.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void handleSummarize()}
+                    disabled={isSummarizing}
+                    className="shrink-0"
                   >
-                    <div className="relative">
-                      <Avatar className="h-9 w-9 ring-2 ring-background shadow-sm">
-                        <AvatarImage src={author?.avatar} alt={author?.name} />
-                        <AvatarFallback className="text-xs">{author?.name?.[0]}</AvatarFallback>
-                      </Avatar>
-                      {index < requestComments.length - 1 && (
-                        <div className="absolute left-1/2 top-10 bottom-0 w-px bg-border -translate-x-1/2 h-6" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium">{author?.name}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(c.createdAt)}
-                        </span>
-                      </div>
-                      <div className="rounded-xl bg-muted/50 p-3 text-sm">
-                        <ArticleContent content={c.content} className="space-y-3 text-sm leading-6" />
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
+                    {isSummarizing ? <Spinner className="mr-2 h-4 w-4" /> : null}
+                    {summary ? "Atualizar" : "Gerar"}
+                  </Button>
+                </div>
 
-        {/* Composer */}
-        <div className="px-8 py-4 border-t border-border shrink-0 bg-muted/30">
-          <div className="flex items-start gap-3">
-            <Avatar className="h-9 w-9 ring-2 ring-background shadow-sm shrink-0">
-              <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback className="text-xs">{user.name[0]}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              {summary?.suggestedReplies?.length ? (
-                <div className="mb-3 border border-border bg-background">
-                  <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-                    <div>
-                      <p className="text-sm font-medium">Respostas sugeridas</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Escolha uma base pronta para responder mais rapido.
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 rounded-md text-muted-foreground"
-                      onClick={() => setShowSuggestions((current) => !current)}
+                {summaryError ? (
+                  <div className="mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    {summaryError}
+                  </div>
+                ) : null}
+
+                {summary ? (
+                  <div className="mt-4 space-y-4">
+                    <div className="text-sm leading-6 text-foreground/90">{summary.summary}</div>
+                    {showSuggestions && summary.suggestedReplies?.length ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium">Sugestões</p>
+                          <Button type="button" variant="ghost" size="sm" onClick={() => setShowSuggestions(false)}>
+                            Ocultar
+                          </Button>
+                        </div>
+                        <div className="grid gap-2">
+                          {summary.suggestedReplies.map((text, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setComment(text)}
+                              className="rounded-md bg-muted/40 px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted"
+                            >
+                              {text}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </section>
+
+              <Separator />
+
+              <section>
+                <div className="flex items-end justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-semibold">Atividade</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">{requestComments.length} comentários</p>
+                  </div>
+                </div>
+                <div className="mt-4 space-y-4">
+                  {requestComments.map((c) => {
+                    const author = users.find((u) => u.id === c.authorId)
+                    return (
+                      <div key={c.id} className="flex gap-3">
+                        <Avatar className="h-9 w-9 shrink-0">
+                          <AvatarImage src={author?.avatar} alt={author?.name ?? "Usuário"} />
+                          <AvatarFallback>{author?.name?.[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <span className="text-sm font-medium">{author?.name}</span>
+                            <span className="text-xs text-muted-foreground tabular-nums">
+                              {formatDistanceToNow(c.createdAt)}
+                            </span>
+                          </div>
+                          <div className="mt-2 rounded-md bg-muted/30 px-3 py-2">
+                            <ArticleContent content={c.content} className="text-sm text-foreground/90" />
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+            </div>
+
+            {/* Sidebar column */}
+            <aside className="space-y-4">
+              <div className="rounded-lg bg-muted/20 p-4">
+                <h2 className="text-sm font-semibold">Campos</h2>
+                <div className="mt-3 space-y-4">
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Status</p>
+                    <Select value={request.status} onValueChange={handleStatusChange} disabled={!canChangeStatus}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statuses.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {statusLabels[s]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Prioridade</p>
+                    <Select value={request.priority} onValueChange={handlePriorityChange} disabled={!canChangePriority}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {priorities.map((p) => (
+                          <SelectItem key={p} value={p}>
+                            {priorityLabels[p]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Responsável</p>
+                    <Select
+                      value={request.assigneeId ?? "unassigned"}
+                      onValueChange={handleAssigneeChange}
+                      disabled={!canChangeAssignee}
                     >
-                      {showSuggestions ? "Nao quero agora" : "Mostrar respostas"}
-                    </Button>
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Sem responsável</SelectItem>
+                        {users.map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-
-                  {showSuggestions ? (
-                    <div className="space-y-2 p-3">
-                      {summary.suggestedReplies.map((reply, index) => (
-                        <button
-                          key={`${request.id}-reply-${index}`}
-                          type="button"
-                          onClick={() => setComment(reply)}
-                          className="w-full border border-border bg-card px-4 py-3 text-left transition-colors hover:bg-muted/35"
-                        >
-                          <p className="text-sm leading-6 text-foreground/88">{reply}</p>
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
                 </div>
-              ) : null}
-
-              <Textarea
-                placeholder="Escreva um comentario..."
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                rows={2}
-                className="resize-none rounded-xl border-muted bg-background"
-              />
-              <div className="flex items-center justify-between mt-3">
-                <div className="flex items-center gap-2">
-                  <MediaUploadButton
-                    onUploaded={({ url, filename }) =>
-                      setComment((current) => `${current.trim()}${current.trim() ? "\n\n" : ""}![${filename}](${url})`)
-                    }
-                    label="Imagem"
-                    variant="ghost"
-                  />
-                </div>
-                <Button
-                  size="sm"
-                  onClick={handleSubmitComment}
-                  disabled={!comment.trim() || isSubmitting}
-                  className="rounded-xl shadow-sm"
-                >
-                  {isSubmitting ? (
-                    <Spinner className="h-4 w-4" />
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-2" />
-                      Enviar
-                    </>
-                  )}
-                </Button>
               </div>
-            </div>
+            </aside>
           </div>
         </div>
       </div>
 
-      {/* Sidebar */}
-      <div className="w-80 border-l border-border p-6 overflow-auto shrink-0 bg-muted/20">
-        <div className="space-y-6">
-          {/* Status */}
-          <div className="animate-fade-in opacity-0" style={{ animationDelay: "0ms" }}>
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Status
-            </label>
-            <Select value={request.status} onValueChange={handleStatusChange} disabled={!canChangeStatus}>
-              <SelectTrigger className="mt-2 rounded-xl">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                {statuses.map((s) => (
-                  <SelectItem key={s} value={s} className="rounded-lg">
-                    {statusLabels[s]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Requester */}
-          <div className="animate-fade-in opacity-0" style={{ animationDelay: "50ms" }}>
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Solicitante
-            </label>
-            <div className="flex items-center gap-3 mt-2 p-2 rounded-xl bg-background border border-border">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={requester?.avatar} alt={requester?.name} />
-                <AvatarFallback className="text-xs">{requester?.name?.[0]}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{requester?.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{requester?.email}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Assignee */}
-          <div className="animate-fade-in opacity-0" style={{ animationDelay: "100ms" }}>
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Responsavel
-            </label>
-            <Select
-              value={request.assigneeId || "unassigned"}
-              onValueChange={handleAssigneeChange}
-              disabled={!canChangeAssignee}
-            >
-              <SelectTrigger className="mt-2 rounded-xl">
-                <SelectValue placeholder="Nao atribuido" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="unassigned" className="rounded-lg">Nao atribuido</SelectItem>
-                {users.map((u) => (
-                  <SelectItem key={u.id} value={u.id} className="rounded-lg">
-                    <span className="flex items-center gap-2">
-                      <Avatar className="h-5 w-5">
-                        <AvatarImage src={u.avatar} alt={u.name} />
-                        <AvatarFallback className="text-[10px]">{u.name[0]}</AvatarFallback>
-                      </Avatar>
-                      {u.name}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Priority */}
-          <div className="animate-fade-in opacity-0" style={{ animationDelay: "150ms" }}>
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Prioridade
-            </label>
-            <Select value={request.priority} onValueChange={handlePriorityChange} disabled={!canChangePriority}>
-              <SelectTrigger className="mt-2 rounded-xl">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                {priorities.map((p) => (
-                  <SelectItem key={p} value={p} className="rounded-lg">
-                    {priorityLabels[p]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Team */}
-          <div className="animate-fade-in opacity-0" style={{ animationDelay: "200ms" }}>
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Equipe
-            </label>
-            <div className="flex items-center gap-2 mt-2 p-2 rounded-xl bg-background border border-border">
-              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <span className="text-sm font-medium">{team?.name}</span>
-            </div>
-          </div>
-
-          {/* Timestamps */}
-          <div className="animate-fade-in opacity-0 pt-4 border-t border-border space-y-3" style={{ animationDelay: "250ms" }}>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                Criado
-              </span>
-              <span className="text-xs font-medium">
-                {formatDate(request.createdAt)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                Atualizado
-              </span>
-              <span className="text-xs font-medium">
-                {formatDate(request.updatedAt)}
-              </span>
+      {/* Composer */}
+      <div className="shrink-0 bg-background">
+        <div className="mx-auto w-full max-w-5xl px-4 py-3 md:px-6">
+          <div className="flex items-end gap-2 rounded-lg bg-muted/20 p-2">
+            <Textarea
+              placeholder="Escreva uma resposta..."
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              className="min-h-[44px] resize-none border-0 bg-transparent px-2 py-2 focus-visible:ring-0"
+            />
+            <div className="flex items-center gap-1 pb-1 pr-1">
+              <MediaUploadButton
+                onUploaded={() => {}}
+                label=""
+                variant="ghost"
+                className="h-9 w-9 px-0"
+              />
+              <Button
+                type="button"
+                onClick={handleSubmitComment}
+                disabled={!comment.trim() || isSubmitting}
+              >
+                {isSubmitting ? <Spinner className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
+                Enviar
+              </Button>
             </div>
           </div>
         </div>

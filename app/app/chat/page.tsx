@@ -10,6 +10,7 @@ import { ArticleContent } from "@/components/app/article-content"
 import { useApp } from "@/lib/app-context"
 import { formatDistanceToNow } from "@/lib/date-utils"
 import { MessageSquareMore, Send } from "lucide-react"
+import { PageContent } from "@/components/app/page-shell"
 
 export default function WorkspaceChatPage() {
   const { workspace, user, messages, addGlobalMessage } = useApp()
@@ -33,25 +34,19 @@ export default function WorkspaceChatPage() {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <header className="border-b border-border px-6 py-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card">
-            <MessageSquareMore className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold">Chat geral</h1>
-            <p className="text-sm text-muted-foreground">
-              Canal unico do workspace {workspace?.name} para recados, alinhamentos rapidos e contexto compartilhado.
-            </p>
-          </div>
+      <PageContent>
+        <div className="mx-auto w-full max-w-4xl">
+        <div className="mb-6">
+          <h1 className="text-balance text-lg font-semibold">Chat geral</h1>
+          <p className="mt-1 text-pretty text-sm text-muted-foreground">
+            Canal do workspace {workspace?.name} para recados e contexto compartilhado.
+          </p>
         </div>
-      </header>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6">
         {groupedMessages.length === 0 ? (
           <div className="flex h-full items-center justify-center">
-            <div className="max-w-sm rounded-xl border border-dashed border-border px-6 py-8 text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-card">
+            <div className="max-w-sm rounded-xl bg-muted/20 px-6 py-8 text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-muted/40">
                 <MessageSquareMore className="h-5 w-5 text-muted-foreground" />
               </div>
               <h2 className="text-base font-semibold">Comece a conversa</h2>
@@ -61,7 +56,7 @@ export default function WorkspaceChatPage() {
             </div>
           </div>
         ) : (
-          <div className="mx-auto flex w-full max-w-4xl flex-col gap-5">
+          <div className="flex w-full flex-col gap-5">
             {groupedMessages.map((message) => {
               const isOwnMessage = message.authorId === user?.id
 
@@ -83,10 +78,10 @@ export default function WorkspaceChatPage() {
                       <span>{formatDistanceToNow(message.createdAt)}</span>
                     </div>
                     <div
-                      className={`rounded-xl border px-4 py-3 ${
+                      className={`rounded-xl px-4 py-3 ${
                         isOwnMessage
-                          ? "border-primary/20 bg-primary/10"
-                          : "border-border bg-card"
+                          ? "bg-primary/10"
+                          : "bg-muted/20"
                       }`}
                     >
                       <ArticleContent content={message.content} className="space-y-3 text-sm leading-6" />
@@ -104,9 +99,10 @@ export default function WorkspaceChatPage() {
             })}
           </div>
         )}
-      </div>
+        </div>
+      </PageContent>
 
-      <div className="border-t border-border px-6 py-4">
+      <div className="px-4 py-4 md:px-6">
         <form onSubmit={handleSubmit} className="mx-auto flex w-full max-w-4xl flex-col gap-3">
           <Textarea
             value={content}

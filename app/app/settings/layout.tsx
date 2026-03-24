@@ -14,13 +14,13 @@ import {
 } from "lucide-react"
 
 const settingsNav = [
-  { icon: Settings, label: "Geral", href: "/app/settings" },
-  { icon: Users, label: "Membros", href: "/app/settings/members", permission: "manageMembers" as const },
-  { icon: Building2, label: "Setores", href: "/app/settings/teams", permission: "manageMembers" as const },
-  { icon: Shield, label: "Permissoes", href: "/app/settings/permissions", permission: "manageSettings" as const },
-  { icon: Palette, label: "Aparencia", href: "/app/settings/appearance" },
-  { icon: Bell, label: "Notificacoes", href: "/app/settings/notifications" },
-  { icon: CreditCard, label: "Faturamento", href: "/app/settings/billing", permission: "manageSettings" as const },
+  { icon: Settings, label: "Geral", href: "/app/settings", category: "Conta" },
+  { icon: Palette, label: "Aparência", href: "/app/settings/appearance", category: "Conta" },
+  { icon: Bell, label: "Notificações", href: "/app/settings/notifications", category: "Conta" },
+  { icon: Users, label: "Membros", href: "/app/settings/members", permission: "manageMembers" as const, category: "Workspace" },
+  { icon: Building2, label: "Setores", href: "/app/settings/teams", permission: "manageMembers" as const, category: "Workspace" },
+  { icon: Shield, label: "Permissões", href: "/app/settings/permissions", permission: "manageSettings" as const, category: "Workspace" },
+  { icon: CreditCard, label: "Faturamento", href: "/app/settings/billing", permission: "manageSettings" as const, category: "Workspace" },
 ]
 
 export default function SettingsLayout({
@@ -31,35 +31,46 @@ export default function SettingsLayout({
   const pathname = usePathname()
   const { hasPermission } = useApp()
   const visibleSettingsNav = settingsNav.filter((item) => !item.permission || hasPermission(item.permission))
+  const groups = [
+    { title: "Conta", items: visibleSettingsNav.filter((item) => item.category === "Conta") },
+    { title: "Workspace", items: visibleSettingsNav.filter((item) => item.category === "Workspace") },
+  ]
 
   return (
     <div className="flex h-full">
-      <div className="w-60 shrink-0 border-r border-border bg-muted/20 p-4">
+      <div className="w-64 shrink-0 border-r border-border bg-background p-4">
         <div className="mb-5 px-3">
-          <h2 className="text-base font-semibold">Configuracoes</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Ajustes da conta, operacao e workspace.</p>
+          <h2 className="text-base font-semibold">Configurações</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Ajustes da conta e operação do workspace.</p>
         </div>
-        <nav className="space-y-1">
-          {visibleSettingsNav.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== "/app/settings" && pathname.startsWith(item.href))
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                  isActive
-                    ? "bg-background font-medium text-foreground ring-1 ring-border"
-                    : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
-                }`}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            )
-          })}
+        <nav className="space-y-5">
+          {groups.map((group) => (
+            <div key={group.title}>
+              <p className="px-3 pb-2 text-xs font-medium text-muted-foreground">{group.title}</p>
+              <ul className="space-y-1">
+                {group.items.map((item) => {
+                  const isActive =
+                    pathname === item.href ||
+                    (item.href !== "/app/settings" && pathname.startsWith(item.href))
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                          isActive
+                            ? "bg-muted font-medium text-foreground"
+                            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                        }`}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        {item.label}
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          ))}
         </nav>
       </div>
 

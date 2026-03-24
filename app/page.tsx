@@ -1,654 +1,298 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { motion, useScroll, useTransform } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+import { Spinner } from "@/components/ui/spinner"
 import {
   ArrowRight,
-  CheckCircle2,
-  Inbox,
-  Users,
-  Zap,
-  BookOpen,
-  Filter,
-  MessageSquare,
-  Search,
-  ChevronRight,
-  Menu,
-  X,
   Sparkles,
-  Command,
-  ArrowUpRight,
+  Layers,
+  Zap,
+  ShieldCheck,
+  Globe,
+  CircleDot,
+  Clock
 } from "lucide-react"
-import { InboxPreview } from "@/components/landing/inbox-preview"
-import { RequestDetailPreview } from "@/components/landing/request-detail-preview"
+import { AppMockup } from "@/components/landing/app-mockup"
+import gsap from "gsap"
+import { ScrollTrigger } from "gsap/ScrollTrigger"
 
-function AnimatedCounter({ value, duration = 2000 }: { value: number; duration?: number }) {
-  const [count, setCount] = useState(0)
-  
-  useEffect(() => {
-    let start = 0
-    const end = value
-    const incrementTime = duration / end
-    
-    const timer = setInterval(() => {
-      start += 1
-      setCount(start)
-      if (start >= end) clearInterval(timer)
-    }, incrementTime)
-    
-    return () => clearInterval(timer)
-  }, [value, duration])
-  
-  return <span>{count}</span>
-}
-
-function TypewriterText({ text, delay = 100 }: { text: string; delay?: number }) {
-  const [displayText, setDisplayText] = useState("")
-  const [currentIndex, setCurrentIndex] = useState(0)
-  
-  useEffect(() => {
-    if (currentIndex < text.length) {
-      const timer = setTimeout(() => {
-        setDisplayText(prev => prev + text[currentIndex])
-        setCurrentIndex(prev => prev + 1)
-      }, delay)
-      return () => clearTimeout(timer)
-    }
-  }, [currentIndex, text, delay])
-  
-  return (
-    <span>
-      {displayText}
-      {currentIndex < text.length && <span className="animate-pulse">|</span>}
-    </span>
-  )
-}
+gsap.registerPlugin(ScrollTrigger)
 
 export default function LandingPage() {
-  const router = useRouter()
   const [email, setEmail] = useState("")
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
-  const [scrollY, setScrollY] = useState(0)
+
+  // Framer Motion for the Hero App Mockup Reveal
+  const { scrollYProgress } = useScroll()
+  const appRotateX = useTransform(scrollYProgress, [0, 0.2], [15, 0])
+  const appScale = useTransform(scrollYProgress, [0, 0.2], [0.8, 1])
+  const appY = useTransform(scrollYProgress, [0, 0.2], [100, 0])
+  const appOpacity = useTransform(scrollYProgress, [0, 0.2], [0.5, 1])
 
   useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY)
-    window.addEventListener("scroll", handleScroll, { passive: true })
-    return () => window.removeEventListener("scroll", handleScroll)
+    // Reveal animations for text inside sections
+    const elements = gsap.utils.toArray(".reveal-up")
+    elements.forEach((el: any) => {
+      gsap.fromTo(el,
+        { opacity: 0, y: 50 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          ease: "expo.out",
+          scrollTrigger: {
+            trigger: el,
+            start: "top bottom-=10%",
+            toggleActions: "play none none reverse"
+          }
+        }
+      )
+    })
   }, [])
 
   const handleWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email) return
-    
     setIsSubmitting(true)
     try {
       const response = await fetch("/api/waitlist", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          source: "landing",
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, source: "vertical-landing" }),
       })
-
-      if (!response.ok) {
-        throw new Error("Falha ao entrar na waitlist")
-      }
-
-      setIsSubmitted(true)
+      if (response.ok) setIsSubmitted(true)
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
-      {/* Navigation */}
-      <nav 
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrollY > 50 
-            ? "bg-background/80 backdrop-blur-xl border-b border-border" 
-            : "bg-transparent"
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-foreground rounded-lg flex items-center justify-center">
-                <span className="text-background font-bold text-sm">P</span>
-              </div>
-              <span className="font-semibold text-lg">PulseDesk</span>
-            </div>
+    <div className="bg-black text-white min-h-screen selection:bg-primary/40 selection:text-white pb-20">
 
-            <div className="hidden md:flex items-center gap-8">
-              <Link href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Recursos
-              </Link>
-              <Link href="#product" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Produto
-              </Link>
-              <Link href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Precos
-              </Link>
-            </div>
+      {/* 1. Hero Section (Clean Typography) */}
+      <section className="relative min-h-[70vh] flex flex-col items-center justify-center pt-24 pb-12 px-6 overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/20 blur-[150px] -z-10 rounded-full pointer-events-none" />
 
-            <div className="hidden md:flex items-center gap-3">
-              <Link href="/auth/sign-in">
-                <Button variant="ghost" size="sm">
-                  Entrar
-                </Button>
-              </Link>
-              <Link href="/waitlist">
-                <Button size="sm" className="group">
-                  Entrar na waitlist
-                  <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
-                </Button>
-              </Link>
-            </div>
-
-            <button className="md:hidden p-2" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+          className="text-center space-y-8 max-w-5xl z-10 mx-auto"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono text-white/60 tracking-[0.4em] uppercase mb-4 backdrop-blur-md">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            Sincronização em Tempo Real
           </div>
-        </div>
 
-        {isMenuOpen && (
-          <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-xl">
-            <div className="px-4 py-4 space-y-3">
-              <Link href="#features" className="block text-sm text-muted-foreground hover:text-foreground">
-                Recursos
-              </Link>
-              <Link href="#product" className="block text-sm text-muted-foreground hover:text-foreground">
-                Produto
-              </Link>
-              <Link href="#pricing" className="block text-sm text-muted-foreground hover:text-foreground">
-                Precos
-              </Link>
-              <div className="pt-3 flex flex-col gap-2">
-                <Link href="/auth/sign-in">
-                  <Button variant="outline" size="sm" className="w-full">
-                    Entrar
-                  </Button>
-                </Link>
-                <Link href="/waitlist">
-                  <Button size="sm" className="w-full">
-                    Entrar na waitlist
-                  </Button>
-                </Link>
-              </div>
-            </div>
+          <h1 className="text-5xl md:text-[6rem] font-bold tracking-tighter leading-[0.9]">
+            A era do caos acabou.
+          </h1>
+
+          <p className="text-lg md:text-2xl text-white/50 font-medium max-w-2xl mx-auto leading-relaxed">
+            PulseDesk é o hub para equipes que exigem velocidade absoluta. Um sistema visceral projetado para reduzir o ruído e amplificar o impacto.
+          </p>
+
+          <div className="pt-12 flex justify-center">
+            <Button size="lg" className="rounded-full h-14 px-8 bg-white text-black hover:bg-zinc-200 transition-colors text-sm font-bold tracking-[0.2em] uppercase shadow-[0_0_40px_rgba(255,255,255,0.1)]">
+              Explorar o Sistema
+            </Button>
           </div>
-        )}
-      </nav>
+        </motion.div>
+      </section>
 
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div 
-            className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] opacity-30"
-            style={{
-              background: "radial-gradient(ellipse at center, hsl(var(--foreground) / 0.08) 0%, transparent 70%)",
-              transform: `translateX(-50%) translateY(${scrollY * 0.1}px)`,
-            }}
-          />
-        </div>
+      {/* App Mockup Section */}
+      <section className="relative w-full max-w-7xl mx-auto px-6 pb-20 perspective-[2000px] z-20">
+        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black to-transparent z-30 pointer-events-none" />
+        <motion.div
+          style={{
+            rotateX: appRotateX,
+            scale: appScale,
+            y: appY,
+            opacity: appOpacity,
+            transformOrigin: "top center"
+          }}
+          className="w-full"
+        >
+          <AppMockup />
+        </motion.div>
+      </section>
 
-        <div className="max-w-7xl mx-auto relative">
-          <div className="text-center max-w-4xl mx-auto">
-            {/* Badge */}
-            <div 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/80 backdrop-blur-sm border border-border text-sm mb-8 animate-fade-in"
-            >
-              <Sparkles className="h-4 w-4" />
-              <span>Acesso antecipado por convite</span>
-              <ChevronRight className="h-3 w-3 text-muted-foreground" />
-            </div>
-
-            {/* Headline */}
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-balance leading-[1.1]">
-              <span className="block">Requests internos.</span>
-              <span className="block mt-2 bg-gradient-to-r from-foreground via-foreground/80 to-foreground/60 bg-clip-text text-transparent">
-                Finalmente resolvidos.
-              </span>
-            </h1>
-
-            <p className="mt-8 text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto text-pretty leading-relaxed">
-              O helpdesk interno para times que querem clareza, velocidade e colaboracao real.
+      {/* 2. Deep Context Narrative */}
+      <section className="py-20 px-6 relative mt-10">
+        <div className="max-w-4xl mx-auto text-center space-y-12">
+          <div className="reveal-up space-y-6 flex flex-col items-center">
+            <h2 className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em] mb-4 flex items-center gap-2">
+              <CircleDot className="w-3 h-3 text-primary" />
+              SYSTEM_OVERVIEW
+            </h2>
+            <h2 className="text-5xl md:text-7xl font-bold tracking-tight">Contexto em Alta<br />Resolução.</h2>
+            <p className="text-2xl text-white/40 leading-relaxed font-medium">
+              Visualize a inteligência coletiva da sua empresa de forma estruturada. Sem perder o fio da meada.
             </p>
+          </div>
+        </div>
+      </section>
 
-            {/* CTA */}
-            <form
-              onSubmit={handleWaitlistSubmit}
-              className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-2xl mx-auto"
-            >
-              <Input
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="h-14 text-base sm:flex-1 sm:min-w-[320px]"
-              />
-              <Button type="submit" size="lg" className="h-14 px-8 text-base group w-full sm:w-auto" disabled={isSubmitting}>
-                {isSubmitting ? "Enviando..." : "Quero acesso antecipado"}
-                {!isSubmitting && (
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                )}
-              </Button>
-            </form>
+      {/* 3. Bento Grid Features styled like the Spatial Inbox */}
+      <section className="py-20 px-6 max-w-7xl mx-auto mt-10">
+        <div className="flex items-center justify-between mb-12 reveal-up">
+          <h2 className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] flex items-center gap-2">
+            <Clock className="w-3 h-3" />
+            Feature Nodes
+          </h2>
+          <div className="h-px flex-1 mx-8 bg-white/5" />
+          <div className="text-[10px] font-mono text-white/10 uppercase border border-white/5 px-4 py-1.5 rounded-full bg-white/5">4 Active Modules</div>
+        </div>
 
-            {/* Social proof mini */}
-            <div className="mt-12 flex items-center justify-center gap-8 text-sm text-muted-foreground">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+          {/* Main Feature */}
+          <div className="reveal-up md:col-span-2 p-8 md:p-10 rounded-[2.5rem] bg-white/[0.03] border border-white/5 backdrop-blur-xl group hover:border-primary/40 transition-all shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[400px]">
+            <div className="absolute -top-10 -right-10 p-4 opacity-[0.03] group-hover:opacity-10 transition-opacity">
+              <Zap className="w-64 h-64 text-primary" />
+            </div>
+
+            <div className="flex items-center gap-3 mb-6 relative z-10">
+              <div className="border border-white/10 bg-white/5 text-[10px] text-white/40 uppercase tracking-tighter rounded-full px-3 py-1 font-mono">
+                #NODE_LATENCY
+              </div>
+              <div className="px-3 py-1 rounded-full bg-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest border border-red-500/30">
+                REAL-TIME
+              </div>
+            </div>
+
+            <div className="relative z-10 pt-10">
+              <h3 className="text-3xl font-bold mb-4 text-white group-hover:text-primary transition-colors">Latency-Zero</h3>
+              <p className="text-lg text-white/40 max-w-md">Interações sub-atômicas e sincronização perfeita. Sinta a velocidade em cada clique, sem recarregamentos.</p>
+            </div>
+
+            <div className="flex items-center justify-between pt-6 border-t border-white/5 relative z-10 mt-8">
               <div className="flex items-center gap-2">
-                <div className="flex -space-x-2">
-                  {[1,2,3,4,5].map(i => (
-                    <div key={i} className="w-8 h-8 rounded-full bg-secondary border-2 border-background flex items-center justify-center text-xs font-medium">
-                      {String.fromCharCode(64 + i)}
-                    </div>
-                  ))}
-                </div>
-                <span><AnimatedCounter value={127} /> na waitlist</span>
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary/40 to-white/10 border border-white/10" />
+                <span className="text-xs text-white/30 font-mono uppercase tracking-tighter">Sync: Operational</span>
               </div>
+              <ArrowRight className="w-5 h-5 text-white/20 group-hover:text-primary group-hover:translate-x-1 transition-all" />
             </div>
           </div>
 
-          {/* Hero Product Preview */}
-          <div 
-            className="mt-20 relative"
-            style={{
-              transform: `perspective(1000px) rotateX(${Math.min(scrollY * 0.02, 5)}deg)`,
-              transition: "transform 0.1s ease-out"
-            }}
-          >
-            {/* Glow effect */}
-            <div className="absolute -inset-4 bg-gradient-to-r from-transparent via-foreground/5 to-transparent rounded-2xl blur-3xl" />
-            
-            <div className="relative rounded-2xl border border-border bg-card shadow-2xl shadow-black/10 overflow-hidden">
-              {/* Browser chrome */}
-              <div className="flex items-center gap-2 px-4 py-3 bg-secondary/50 border-b border-border">
-                <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-border" />
-                  <div className="w-3 h-3 rounded-full bg-border" />
-                  <div className="w-3 h-3 rounded-full bg-border" />
-                </div>
-                <div className="flex-1 flex justify-center">
-                  <div className="px-4 py-1 bg-background rounded-md text-xs text-muted-foreground flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    </div>
-                    app.pulsedesk.com
-                  </div>
-                </div>
+          {/* Side Feature 1 */}
+          <div className="reveal-up p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all group flex flex-col justify-between min-h-[400px]">
+            <div>
+              <div className="flex items-center justify-between mb-8">
+                <span className="text-[10px] font-mono text-white/40 uppercase group-hover:text-accent transition-colors">NODE_ID::CONN</span>
+                <div className="border border-white/5 bg-white/[0.02] text-[9px] uppercase text-white/40 px-2 py-0.5 rounded-full">ACTIVE</div>
               </div>
-              <InboxPreview />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-20 border-y border-border bg-secondary/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { value: "87%", label: "menos tempo buscando requests" },
-              { value: "3x", label: "mais rapido para resolver" },
-              { value: "100%", label: "visibilidade do time" },
-              { value: "0", label: "requests perdidos" },
-            ].map((stat, i) => (
-              <div key={i} className="text-center">
-                <div className="text-4xl sm:text-5xl font-bold tracking-tight">{stat.value}</div>
-                <div className="mt-2 text-sm text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Bento Grid */}
-      <section id="features" className="py-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge variant="secondary" className="mb-4">Recursos</Badge>
-            <h2 className="text-4xl sm:text-5xl font-bold tracking-tight">
-              Construido para times que se importam
-            </h2>
-            <p className="mt-4 text-xl text-muted-foreground max-w-2xl mx-auto">
-              Cada feature pensada para eliminar friccao e aumentar visibilidade.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Feature 1 - Large */}
-            <div className="lg:col-span-2 group rounded-2xl border border-border bg-card p-8 hover:border-foreground/20 transition-all hover:shadow-lg">
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-xl bg-foreground">
-                  <Inbox className="h-6 w-6 text-background" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-xl">Inbox inteligente</h3>
-                  <p className="text-muted-foreground mt-2 text-lg">
-                    Split view poderosa. Veja a lista e detalhes lado a lado. Filtre por status, prioridade, equipe - instantaneamente.
-                  </p>
-                </div>
-              </div>
-              <div className="mt-8 rounded-xl border border-border overflow-hidden bg-secondary/30 p-6">
-                <div className="flex items-center gap-3">
-                  {["Novo", "Em Progresso", "Aguardando", "Resolvido"].map((status, i) => (
-                    <span
-                      key={status}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all hover:scale-105 cursor-pointer ${
-                        i === 0 ? "bg-foreground text-background" : "bg-secondary hover:bg-secondary/80"
-                      }`}
-                    >
-                      {status}
-                    </span>
-                  ))}
-                </div>
-              </div>
+              <Globe className="w-10 h-10 text-white/20 group-hover:text-amber-400 transition-colors mb-6" />
+              <h3 className="text-2xl font-bold mb-3 text-white">Conexão Total</h3>
+              <p className="text-white/40">Fluxo inter-departamental com visibilidade global.</p>
             </div>
 
-            {/* Feature 2 */}
-            <div className="group rounded-2xl border border-border bg-card p-8 hover:border-foreground/20 transition-all hover:shadow-lg">
-              <div className="p-3 rounded-xl bg-foreground w-fit">
-                <Command className="h-6 w-6 text-background" />
-              </div>
-              <h3 className="font-semibold text-xl mt-6">Command Bar</h3>
-              <p className="text-muted-foreground mt-2">
-                Navegue, busque, crie - tudo com o teclado. Fluxo ininterrupto.
-              </p>
-              <div className="mt-6 p-4 rounded-xl bg-secondary/50 border border-border">
-                <div className="flex items-center gap-2 text-sm">
-                  <kbd className="px-2 py-1 bg-background rounded border border-border text-xs font-mono">Cmd</kbd>
-                  <span className="text-muted-foreground">+</span>
-                  <kbd className="px-2 py-1 bg-background rounded border border-border text-xs font-mono">K</kbd>
-                </div>
-              </div>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="group rounded-2xl border border-border bg-card p-8 hover:border-foreground/20 transition-all hover:shadow-lg">
-              <div className="p-3 rounded-xl bg-foreground w-fit">
-                <Users className="h-6 w-6 text-background" />
-              </div>
-              <h3 className="font-semibold text-xl mt-6">Colaboracao real</h3>
-              <p className="text-muted-foreground mt-2">
-                Comentarios, mencoes, timeline completa. Todos na mesma pagina.
-              </p>
-            </div>
-
-            {/* Feature 4 */}
-            <div className="group rounded-2xl border border-border bg-card p-8 hover:border-foreground/20 transition-all hover:shadow-lg">
-              <div className="p-3 rounded-xl bg-foreground w-fit">
-                <Filter className="h-6 w-6 text-background" />
-              </div>
-              <h3 className="font-semibold text-xl mt-6">Views customizadas</h3>
-              <p className="text-muted-foreground mt-2">
-                Cada equipe com sua visao. Engineering, Design, Ops - filtros salvos.
-              </p>
-            </div>
-
-            {/* Feature 5 */}
-            <div className="group rounded-2xl border border-border bg-card p-8 hover:border-foreground/20 transition-all hover:shadow-lg">
-              <div className="p-3 rounded-xl bg-foreground w-fit">
-                <BookOpen className="h-6 w-6 text-background" />
-              </div>
-              <h3 className="font-semibold text-xl mt-6">Knowledge Base</h3>
-              <p className="text-muted-foreground mt-2">
-                Documentacao centralizada. Reduza requests repetidos.
-              </p>
-            </div>
-
-            {/* Feature 6 - Wide */}
-            <div className="md:col-span-2 lg:col-span-3 group rounded-2xl border border-border bg-gradient-to-br from-foreground to-foreground/90 text-background p-8">
-              <div className="flex flex-col lg:flex-row lg:items-center gap-8">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-2xl">Workspace privado por empresa</h3>
-                  <p className="mt-3 text-background/70 text-lg">
-                    Entrada apenas por convite. Seu time, suas regras. Admin controla quem entra, quem faz o que.
-                  </p>
-                  <div className="mt-6 flex flex-wrap gap-3">
-                    {["Convites por email", "Roles customizaveis", "SSO em breve"].map(tag => (
-                      <span key={tag} className="px-3 py-1 rounded-full bg-background/10 text-sm">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex-shrink-0">
-                  <div className="w-32 h-32 rounded-2xl bg-background/10 flex items-center justify-center">
-                    <div className="w-16 h-16 rounded-xl bg-background flex items-center justify-center">
-                      <span className="text-foreground font-bold text-2xl">P</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Product Walkthrough */}
-      <section id="product" className="py-24 px-4 sm:px-6 lg:px-8 bg-secondary/30">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge variant="secondary" className="mb-4">Produto</Badge>
-            <h2 className="text-4xl sm:text-5xl font-bold tracking-tight">
-              Interface que respira
-            </h2>
-            <p className="mt-4 text-xl text-muted-foreground max-w-2xl mx-auto">
-              Design limpo. Foco no conteudo. Cada pixel pensado para clareza.
-            </p>
-          </div>
-
-          {/* Inbox Preview */}
-          <div className="mb-20">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="p-3 rounded-xl bg-foreground">
-                <Inbox className="h-5 w-5 text-background" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-xl">Inbox</h3>
-                <p className="text-muted-foreground">
-                  Central de comando. Todos requests. Zero ruido.
-                </p>
-              </div>
-            </div>
-            <div className="rounded-2xl border border-border bg-card shadow-xl overflow-hidden">
-              <InboxPreview />
-            </div>
-          </div>
-
-          {/* Request Detail Preview */}
-          <div>
-            <div className="flex items-center gap-4 mb-8">
-              <div className="p-3 rounded-xl bg-foreground">
-                <MessageSquare className="h-5 w-5 text-background" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-xl">Request Detail</h3>
-                <p className="text-muted-foreground">
-                  Timeline, comentarios, acoes. Tudo em um lugar.
-                </p>
-              </div>
-            </div>
-            <div className="rounded-2xl border border-border bg-card shadow-xl overflow-hidden">
-              <RequestDetailPreview />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Comparison Section */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold tracking-tight">
-              Antes vs Depois
-            </h2>
-            <p className="mt-4 text-xl text-muted-foreground">
-              De caos para clareza em um dia
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Before */}
-            <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-8">
-              <h3 className="font-semibold text-xl text-destructive mb-6">Sem PulseDesk</h3>
-              <ul className="space-y-4">
-                {[
-                  "Requests perdidos no Slack",
-                  "Planilhas desatualizadas",
-                  "Notion confuso",
-                  "Emails ignorados",
-                  "Ninguem sabe quem e responsavel",
-                  "Coisas caem no limbo",
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-3 text-muted-foreground">
-                    <X className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
-                    {item}
-                  </li>
+            <div className="flex items-center justify-between pt-4 border-t border-white/[0.03] mt-8">
+              <div className="flex -space-x-2">
+                {[1, 2].map(i => (
+                  <div key={i} className="w-6 h-6 rounded-full bg-white/10 border border-black shadow-sm" />
                 ))}
-              </ul>
-            </div>
-
-            {/* After */}
-            <div className="rounded-2xl border border-foreground/20 bg-foreground/5 p-8">
-              <h3 className="font-semibold text-xl mb-6">Com PulseDesk</h3>
-              <ul className="space-y-4">
-                {[
-                  "Tudo em um lugar so",
-                  "Status sempre atualizado",
-                  "Knowledge base organizada",
-                  "Comunicacao centralizada",
-                  "Ownership claro",
-                  "Nada e esquecido",
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-3 text-muted-foreground">
-                    <CheckCircle2 className="h-5 w-5 text-foreground mt-0.5 shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Waitlist CTA */}
-      <section className="py-32 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="relative rounded-3xl bg-foreground text-background p-12 sm:p-16 overflow-hidden">
-            {/* Background pattern */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 left-0 w-full h-full" style={{
-                backgroundImage: `radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%),
-                                  radial-gradient(circle at 80% 50%, rgba(255,255,255,0.2) 0%, transparent 50%)`
-              }} />
-            </div>
-
-            <div className="relative text-center">
-              <Badge className="mb-6 bg-background/10 text-background border-background/20">
-                Acesso por convite
-              </Badge>
-              <h2 className="text-4xl sm:text-5xl font-bold tracking-tight">
-                Entre para a waitlist
-              </h2>
-              <p className="mt-4 text-xl text-background/70 max-w-xl mx-auto">
-                Vagas limitadas. Receba um codigo de acesso exclusivo quando liberarmos seu lugar.
-              </p>
-
-              {!isSubmitted ? (
-                <form onSubmit={handleWaitlistSubmit} className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
-                  <Input
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="h-14 bg-background/10 border-background/20 text-background placeholder:text-background/50 focus:border-background/40 text-base"
-                  />
-                  <Button 
-                    type="submit"
-                    variant="secondary" 
-                    size="lg"
-                    className="h-14 px-8 w-full sm:w-auto shrink-0"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <span className="flex items-center gap-2">
-                        <span className="w-4 h-4 border-2 border-foreground/30 border-t-foreground rounded-full animate-spin" />
-                        Enviando...
-                      </span>
-                    ) : (
-                      <>
-                        Quero acesso
-                        <ArrowRight className="ml-2 h-5 w-5" />
-                      </>
-                    )}
-                  </Button>
-                </form>
-              ) : (
-                <div className="mt-10 flex flex-col items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-background/20 flex items-center justify-center">
-                    <CheckCircle2 className="h-8 w-8 text-background" />
-                  </div>
-                  <p className="text-xl font-medium">Voce esta na lista!</p>
-                  <p className="text-background/70">Enviaremos seu codigo de acesso em breve.</p>
-                </div>
-              )}
-
-              <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-background/60">
-                <span className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Onboarding exclusivo
-                </span>
-                <span className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Acesso vitalicio ao plano early
-                </span>
-                <span className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Canal direto com founders
-                </span>
+              </div>
+              <div className="text-[9px] text-white/20 uppercase font-black tracking-widest group-hover:text-amber-400 transition-colors">
+                OPEN SYNC →
               </div>
             </div>
           </div>
+
+          {/* Side Feature 2 */}
+          <div className="reveal-up p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all group flex flex-col justify-between min-h-[400px]">
+            <div>
+              <div className="flex items-center justify-between mb-8">
+                <span className="text-[10px] font-mono text-white/40 uppercase group-hover:text-emerald-400 transition-colors">NODE_ID::SEC</span>
+                <div className="border border-white/5 bg-white/[0.02] text-[9px] uppercase text-white/40 px-2 py-0.5 rounded-full">ENCRYPTED</div>
+              </div>
+              <ShieldCheck className="w-10 h-10 text-white/20 group-hover:text-emerald-400 transition-colors mb-6" />
+              <h3 className="text-2xl font-bold mb-3 text-white">Soberania</h3>
+              <p className="text-white/40">Dados criptografados de ponta-a-ponta.</p>
+            </div>
+
+            <div className="flex items-center justify-between pt-4 border-t border-white/[0.03] mt-8">
+              <div className="text-[9px] text-white/20 uppercase font-black tracking-widest group-hover:text-emerald-400 transition-colors">
+                VERIFY →
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Feature */}
+          <div className="reveal-up md:col-span-2 p-8 md:p-10 rounded-[2.5rem] bg-white/[0.03] border border-white/5 backdrop-blur-xl group hover:border-white/20 transition-all shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[300px]">
+            <div className="flex items-center gap-3 mb-6 relative z-10">
+              <div className="border border-white/10 bg-white/5 text-[10px] text-white/40 uppercase tracking-tighter rounded-full px-3 py-1 font-mono">
+                #STRUCT
+              </div>
+            </div>
+
+            <div className="relative z-10 flex gap-8 items-center">
+              <Layers className="w-16 h-16 text-white/10 group-hover:text-white/30 transition-colors hidden sm:block" />
+              <div>
+                <h3 className="text-3xl font-bold mb-4 text-white">Hiper-Estrutura</h3>
+                <p className="text-lg text-white/40 max-w-md">Camadas organizacionais que se adaptam à sua forma de trabalhar. Mais que um Kanban, uma tela espacial.</p>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 px-4 sm:px-6 lg:px-8 border-t border-border">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-foreground rounded-lg flex items-center justify-center">
-                <span className="text-background font-bold text-sm">P</span>
-              </div>
-              <span className="font-semibold">PulseDesk</span>
-            </div>
-
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <Link href="#" className="hover:text-foreground transition-colors">Termos</Link>
-              <Link href="#" className="hover:text-foreground transition-colors">Privacidade</Link>
-              <Link href="#" className="hover:text-foreground transition-colors">Contato</Link>
-            </div>
-
-            <p className="text-sm text-muted-foreground">
-              2024 PulseDesk. Feito com foco.
-            </p>
-          </div>
+      {/* 4. CTA / Waitlist */}
+      <section className="py-40 px-6 relative mt-20">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/5 -z-10" />
+        <div className="flex items-center justify-center mb-12">
+          <h2 className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            INITIATE_SEQUENCE
+          </h2>
         </div>
-      </footer>
+        <div className="reveal-up max-w-3xl mx-auto text-center space-y-12">
+          <h2 className="text-5xl md:text-7xl font-bold tracking-tight text-white leading-none">
+            Pronto para a Transmutação?
+          </h2>
+          <p className="text-white/40 mx-auto font-mono text-sm uppercase tracking-widest">
+            Deixe seu sinal abaixo para early-access.
+          </p>
+
+          {!isSubmitted ? (
+            <form onSubmit={handleWaitlistSubmit} className="max-w-md mx-auto space-y-4 pt-8">
+              <div className="flex gap-2">
+                <Input
+                  type="email"
+                  placeholder="ID_SISTEMA::SEU_EMAIL"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-white/[0.03] border-white/10 text-white placeholder:text-white/20 h-14 rounded-full px-6 font-mono text-sm focus-visible:ring-primary/50 flex-1"
+                  required
+                />
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="rounded-full h-14 px-8 bg-white text-black hover:bg-zinc-200 font-bold tracking-widest uppercase text-xs"
+                >
+                  {isSubmitting ? <Spinner className="w-4 h-4 text-black" /> : "TRANSMIT"}
+                </Button>
+              </div>
+              <p className="text-[10px] text-white/30 font-mono tracking-widest uppercase">Nodes limitados na fase beta.</p>
+            </form>
+          ) : (
+            <div className="p-8 rounded-[2rem] bg-primary/10 border border-primary/20 text-primary mx-auto max-w-md backdrop-blur-md">
+              <h3 className="text-2xl font-bold mb-2">Sinal Recebido.</h3>
+              <p className="font-mono text-[10px] uppercase tracking-widest opacity-80">Sync estabilizado. Aguardando liberação do portal.</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Background Textures */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.015] mix-blend-overlay z-50 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+      <div className="fixed inset-0 bg-spatial pointer-events-none opacity-20 -z-20" />
     </div>
   )
 }
+

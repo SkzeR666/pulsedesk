@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { useApp } from "@/lib/app-context"
+import { PageContent, PageSection } from "@/components/app/page-shell"
 import { CreditCard, Users, FileText, Zap, CheckCircle2, Shield } from "lucide-react"
 
 const plans = [
@@ -50,16 +51,17 @@ export default function BillingPage() {
     memberUsage > 5 || requestUsage > 100 ? "Acima da referencia do plano Free." : "Dentro da faixa operacional atual."
 
   return (
-    <div className="p-6 max-w-4xl">
+    <PageContent>
+      <div className="mx-auto w-full max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Faturamento</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-balance">Faturamento</h1>
         <p className="text-muted-foreground mt-1">
           Painel operacional do workspace. Billing automatico ainda nao esta conectado, mas os consumos abaixo usam dados reais.
         </p>
       </div>
 
-      <section className="mb-10">
-        <h2 className="text-lg font-semibold mb-4">Plano Atual</h2>
+      <div className="space-y-6">
+      <PageSection title="Plano atual">
         <div className="rounded-lg border border-border p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -120,12 +122,11 @@ export default function BillingPage() {
             </div>
           </div>
         </div>
-      </section>
+      </PageSection>
 
       <Separator className="my-8" />
 
-      <section>
-        <h2 className="text-lg font-semibold mb-4">Planos</h2>
+      <PageSection title="Planos">
         <div className="grid grid-cols-3 gap-4">
           {plans.map((plan) => (
             <div
@@ -156,7 +157,9 @@ export default function BillingPage() {
             </div>
           ))}
         </div>
-      </section>
-    </div>
+      </PageSection>
+      </div>
+      </div>
+    </PageContent>
   )
 }

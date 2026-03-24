@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { useApp } from "@/lib/app-context"
+import { PageContent } from "@/components/app/page-shell"
 import type { RolePermissions, WorkspacePermissionKey } from "@/lib/types"
 import {
   CheckCircle2,
@@ -34,7 +35,7 @@ const roles = [
 
 const permissions = [
   { id: "manageMembers", label: "Gerenciar membros e convites", icon: Users, admin: true, member: false },
-  { id: "manageViews", label: "Criar e manter views salvas", icon: Eye, admin: true, member: true },
+  { id: "manageViews", label: "Criar e manter setores salvos", icon: Eye, admin: true, member: true },
   { id: "manageKnowledge", label: "Criar artigos internos", icon: Edit, admin: true, member: true },
   { id: "manageSettings", label: "Editar configuracoes do workspace", icon: Shield, admin: true, member: false },
   { id: "updateRequests", label: "Atualizar requests e ownership", icon: Trash2, admin: true, member: true },
@@ -61,9 +62,10 @@ export default function PermissionsPage() {
   }
 
   return (
-    <div className="p-6 max-w-3xl">
+    <PageContent>
+      <div className="mx-auto w-full max-w-3xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Permissoes</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-balance">Permissões</h1>
         <p className="text-muted-foreground mt-1">Controle o que membros comuns conseguem fazer no workspace.</p>
       </div>
 
@@ -189,6 +191,7 @@ export default function PermissionsPage() {
           </Button>
         </div>
       )}
-    </div>
+      </div>
+    </PageContent>
   )
 }

@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Spinner } from "@/components/ui/spinner"
 import { applyAppearanceToDocument } from "@/components/app/appearance-sync"
 import { useApp } from "@/lib/app-context"
+import { PageContent, PageSection } from "@/components/app/page-shell"
 import { Monitor, Moon, Sun, Check } from "lucide-react"
 
 const themes = [
@@ -68,17 +69,18 @@ export default function AppearancePage() {
     sidebarDensity !== preferences.sidebarDensity
 
   return (
-    <div className="p-6 max-w-2xl">
+    <PageContent>
+      <div className="mx-auto w-full max-w-2xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Aparencia</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-balance">Aparência</h1>
         <p className="text-muted-foreground mt-1">Personalize a aparencia do PulseDesk.</p>
         <p className="mt-2 text-xs text-muted-foreground">
           Tema ativo agora: {theme === "system" ? `Sistema (${resolvedTheme === "dark" ? "escuro" : "claro"})` : theme === "dark" ? "Escuro" : "Claro"}
         </p>
       </div>
 
-      <section className="mb-10">
-        <h2 className="text-lg font-semibold mb-4">Tema</h2>
+      <div className="space-y-6">
+      <PageSection title="Tema">
         <RadioGroup value={theme} onValueChange={setTheme} className="grid grid-cols-3 gap-4">
         {themes.map((item) => (
           <Label
@@ -101,10 +103,9 @@ export default function AppearancePage() {
             </Label>
           ))}
         </RadioGroup>
-      </section>
+      </PageSection>
 
-      <section className="mb-10">
-        <h2 className="text-lg font-semibold mb-4">Cor de destaque</h2>
+      <PageSection title="Cor de destaque">
         <div className="flex items-center gap-3">
           {accentColors.map((color) => (
             <button
@@ -122,10 +123,9 @@ export default function AppearancePage() {
             </button>
           ))}
         </div>
-      </section>
+      </PageSection>
 
-      <section className="mb-10">
-        <h2 className="text-lg font-semibold mb-4">Densidade da sidebar</h2>
+      <PageSection title="Densidade da sidebar">
         <RadioGroup value={sidebarDensity} onValueChange={setSidebarDensity} className="space-y-2">
           <div className="flex items-center space-x-3">
             <RadioGroupItem value="compact" id="compact" />
@@ -142,11 +142,13 @@ export default function AppearancePage() {
             </Label>
           </div>
         </RadioGroup>
-      </section>
+      </PageSection>
 
       <Button onClick={handleSave} disabled={isSaving || !hasChanges}>
         {isSaving ? <Spinner className="h-4 w-4" /> : hasChanges ? "Salvar preferencias" : "Preferencias atualizadas"}
       </Button>
-    </div>
+      </div>
+      </div>
+    </PageContent>
   )
 }
