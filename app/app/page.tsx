@@ -8,13 +8,6 @@ import { RequestDetail } from "@/components/app/request-detail"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { NewViewModal } from "@/components/app/new-view-modal"
 import {
   AlertDialog,
@@ -32,7 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Search, X, MoreHorizontal, Pencil, Trash2, Plus, SlidersHorizontal } from "lucide-react"
+import { Search, X, MoreHorizontal, Pencil, Trash2, Plus } from "lucide-react"
 import type { Request } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -321,43 +314,75 @@ export default function InboxPage() {
               ) : null}
             </div>
 
-            <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 p-2">
-              <div className="inline-flex items-center gap-2 px-2 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                <SlidersHorizontal className="h-3.5 w-3.5" />
-                Filtros
+            <div className="rounded-xl border border-border/70 bg-card/60 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                  Filtros
+                </p>
+                {scopeFilter !== "all" || statusFilter !== "all" || searchQuery ? (
+                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={clearFilters}>
+                    Limpar
+                  </Button>
+                ) : null}
               </div>
-              <div className="grid flex-1 grid-cols-1 gap-2 md:grid-cols-2">
-                <Select value={scopeFilter} onValueChange={(value) => handleScopeChange(value as ScopeFilter)}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Escopo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="mine">Atribuidos a mim</SelectItem>
-                    <SelectItem value="waiting">Aguardando resposta</SelectItem>
-                    <SelectItem value="recent">Recentes</SelectItem>
-                  </SelectContent>
-                </Select>
 
-                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os status</SelectItem>
-                    <SelectItem value="open">Abertos</SelectItem>
-                    <SelectItem value="in_progress">Em andamento</SelectItem>
-                    <SelectItem value="waiting">Aguardando</SelectItem>
-                    <SelectItem value="resolved">Resolvidos</SelectItem>
-                    <SelectItem value="closed">Fechados</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="mt-3 space-y-3">
+                <div>
+                  <p className="mb-2 text-xs text-muted-foreground">Escopo</p>
+                  <div className="flex flex-wrap gap-2">
+                    {([
+                      { value: "all", label: "Todos" },
+                      { value: "mine", label: "Meus" },
+                      { value: "waiting", label: "Aguardando" },
+                      { value: "recent", label: "Recentes" },
+                    ] as const).map((item) => (
+                      <Button
+                        key={item.value}
+                        type="button"
+                        variant={scopeFilter === item.value ? "secondary" : "ghost"}
+                        size="sm"
+                        className={cn(
+                          "h-8 rounded-lg px-3",
+                          scopeFilter === item.value
+                            ? "bg-muted text-foreground"
+                            : "border border-transparent text-muted-foreground hover:border-border/70 hover:bg-muted/50 hover:text-foreground"
+                        )}
+                        onClick={() => handleScopeChange(item.value)}
+                      >
+                        {item.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs text-muted-foreground">Status</p>
+                  <div className="flex flex-wrap gap-2">
+                    {([
+                      { value: "all", label: "Todos" },
+                      { value: "open", label: "Abertos" },
+                      { value: "in_progress", label: "Andamento" },
+                      { value: "waiting", label: "Aguardando" },
+                    ] as const).map((item) => (
+                      <Button
+                        key={item.value}
+                        type="button"
+                        variant={statusFilter === item.value ? "secondary" : "ghost"}
+                        size="sm"
+                        className={cn(
+                          "h-8 rounded-lg px-3",
+                          statusFilter === item.value
+                            ? "bg-muted text-foreground"
+                            : "border border-transparent text-muted-foreground hover:border-border/70 hover:bg-muted/50 hover:text-foreground"
+                        )}
+                        onClick={() => setStatusFilter(item.value as StatusFilter)}
+                      >
+                        {item.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
               </div>
-              {scopeFilter !== "all" || statusFilter !== "all" || searchQuery ? (
-                <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={clearFilters}>
-                  Limpar
-                </Button>
-              ) : null}
             </div>
           </div>
         </header>
