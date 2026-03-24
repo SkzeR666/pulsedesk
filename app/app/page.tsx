@@ -284,24 +284,22 @@ export default function InboxPage() {
               ) : null}
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <span className="shrink-0 text-xs font-medium text-muted-foreground">Setor:</span>
-                  <Select value={teamFilter} onValueChange={(value) => setTeamFilter(value)}>
-                    <SelectTrigger className="h-8 max-w-[210px] rounded-lg">
-                      <SelectValue placeholder="Todos os setores" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos os setores</SelectItem>
-                      {teams.map((team) => (
-                        <SelectItem key={team.id} value={team.id}>
-                          {team.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="grid grid-cols-[52px_minmax(0,1fr)] items-center gap-x-3 gap-y-2">
+              <span className="text-xs font-medium text-muted-foreground">Setor</span>
+              <div className="flex min-w-0 items-center gap-2">
+                <Select value={teamFilter} onValueChange={(value) => setTeamFilter(value)}>
+                  <SelectTrigger className="h-8 w-full max-w-[220px] rounded-lg">
+                    <SelectValue placeholder="Todos os setores" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os setores</SelectItem>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {teamFilter !== "all" || statusFilter !== "all" || searchQuery ? (
                   <Button type="button" variant="ghost" size="sm" className="h-8 shrink-0 px-2.5 text-xs" onClick={clearFilters}>
                     Limpar
@@ -309,33 +307,20 @@ export default function InboxPage() {
                 ) : null}
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="shrink-0 px-1 text-xs font-medium text-muted-foreground">Estados:</span>
-                <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {([
-                    { value: "all", label: "Todos" },
-                    { value: "open", label: "Abertos" },
-                    { value: "in_progress", label: "Andamento" },
-                    { value: "waiting", label: "Aguardando" },
-                  ] as const).map((item) => (
-                    <Button
-                      key={item.value}
-                      type="button"
-                      variant={statusFilter === item.value ? "secondary" : "ghost"}
-                      size="sm"
-                      className={cn(
-                        "h-8 shrink-0 rounded-lg px-3",
-                        statusFilter === item.value
-                          ? "bg-muted text-foreground"
-                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                      )}
-                      onClick={() => setStatusFilter(item.value as StatusFilter)}
-                    >
-                      {item.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+              <span className="text-xs font-medium text-muted-foreground">Estado</span>
+              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
+                <SelectTrigger className="h-8 w-full max-w-[220px] rounded-lg">
+                  <SelectValue placeholder="Todos os estados" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os estados</SelectItem>
+                  <SelectItem value="open">Abertos</SelectItem>
+                  <SelectItem value="in_progress">Andamento</SelectItem>
+                  <SelectItem value="waiting">Aguardando</SelectItem>
+                  <SelectItem value="resolved">Resolvidos</SelectItem>
+                  <SelectItem value="closed">Fechados</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </header>
