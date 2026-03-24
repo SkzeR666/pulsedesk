@@ -307,13 +307,13 @@ export default function InboxPage() {
                 ) : null}
               </div>
 
-              <span className="text-xs font-medium text-muted-foreground">Estado</span>
+              <span className="text-xs font-medium text-muted-foreground">Status</span>
               <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
                 <SelectTrigger className="h-8 w-full max-w-[220px] rounded-lg">
-                  <SelectValue placeholder="Todos os estados" />
+                  <SelectValue placeholder="Todos os status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os estados</SelectItem>
+                  <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="open">Abertos</SelectItem>
                   <SelectItem value="in_progress">Andamento</SelectItem>
                   <SelectItem value="waiting">Aguardando</SelectItem>
