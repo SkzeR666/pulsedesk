@@ -9,7 +9,6 @@ import {
   Shield,
   Palette,
   Bell,
-  CreditCard,
 } from 'lucide-react'
 
 const settingsLinks = [
@@ -37,11 +36,6 @@ const settingsLinks = [
     label: 'Notificações',
     href: '/app/settings/notifications',
     icon: Bell,
-  },
-  {
-    label: 'Faturamento',
-    href: '/app/settings/billing',
-    icon: CreditCard,
   },
 ]
 
