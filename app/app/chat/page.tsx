@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -16,8 +16,18 @@ export default function WorkspaceChatPage() {
   const { workspace, user, messages, addGlobalMessage } = useApp()
   const [content, setContent] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement | null>(null)
+  const hasScrolledRef = useRef(false)
 
   const groupedMessages = useMemo(() => messages, [messages])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: hasScrolledRef.current ? "smooth" : "auto",
+      block: "end",
+    })
+    hasScrolledRef.current = true
+  }, [groupedMessages.length])
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -97,6 +107,7 @@ export default function WorkspaceChatPage() {
                 </article>
               )
             })}
+            <div ref={messagesEndRef} />
           </div>
         )}
         </div>
