@@ -30,19 +30,17 @@ export default function AppearancePage() {
   const { resolvedTheme, setTheme: setActiveTheme } = useTheme()
   const [theme, setTheme] = useState(preferences.theme)
   const [accentColor, setAccentColor] = useState(preferences.accentColor)
-  const [sidebarDensity, setSidebarDensity] = useState(preferences.sidebarDensity)
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     setTheme(preferences.theme)
     setAccentColor(preferences.accentColor)
-    setSidebarDensity(preferences.sidebarDensity)
   }, [preferences])
 
   useEffect(() => {
     setActiveTheme(theme)
-    applyAppearanceToDocument({ accentColor, sidebarDensity })
-  }, [accentColor, setActiveTheme, sidebarDensity, theme])
+    applyAppearanceToDocument({ accentColor, sidebarDensity: preferences.sidebarDensity })
+  }, [accentColor, preferences.sidebarDensity, setActiveTheme, theme])
 
   useEffect(() => {
     return () => {
@@ -57,97 +55,75 @@ export default function AppearancePage() {
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      await savePreferences({ theme, accentColor, sidebarDensity })
+      await savePreferences({ theme, accentColor, sidebarDensity: preferences.sidebarDensity })
     } finally {
       setIsSaving(false)
     }
   }
 
-  const hasChanges =
-    theme !== preferences.theme ||
-    accentColor !== preferences.accentColor ||
-    sidebarDensity !== preferences.sidebarDensity
+  const hasChanges = theme !== preferences.theme || accentColor !== preferences.accentColor
 
   return (
     <PageContent>
       <div className="mx-auto w-full max-w-2xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-balance">Aparência</h1>
-        <p className="text-muted-foreground mt-1">Personalize a aparencia do PulseDesk.</p>
-        <p className="mt-2 text-xs text-muted-foreground">
-          Tema ativo agora: {theme === "system" ? `Sistema (${resolvedTheme === "dark" ? "escuro" : "claro"})` : theme === "dark" ? "Escuro" : "Claro"}
-        </p>
-      </div>
-
-      <div className="space-y-6">
-      <PageSection title="Tema">
-        <RadioGroup value={theme} onValueChange={setTheme} className="grid grid-cols-3 gap-4">
-        {themes.map((item) => (
-          <Label
-            key={item.id}
-            htmlFor={item.id}
-            className={`flex flex-col items-center gap-3 rounded-lg border p-4 cursor-pointer transition-colors ${
-              theme === item.id
-                ? "border-primary bg-accent/20 text-foreground shadow-[0_0_0_1px_var(--color-primary)]"
-                : "border-border bg-card hover:border-primary/40 hover:bg-muted/40"
-            }`}
-          >
-              <RadioGroupItem value={item.id} id={item.id} className="sr-only" />
-              <div className={`rounded-full p-3 ${theme === item.id ? "bg-background" : "bg-secondary"}`}>
-                <item.icon className="h-6 w-6" />
-              </div>
-              <div className="text-center">
-                <p className="font-medium">{item.label}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>
-              </div>
-            </Label>
-          ))}
-        </RadioGroup>
-      </PageSection>
-
-      <PageSection title="Cor de destaque">
-        <div className="flex items-center gap-3">
-          {accentColors.map((color) => (
-            <button
-              type="button"
-              key={color.id}
-              onClick={() => setAccentColor(color.id)}
-              className={`flex h-10 w-10 items-center justify-center rounded-full ${color.color} transition-transform ${
-                accentColor === color.id
-                  ? "scale-110 ring-2 ring-[color:var(--primary)] ring-offset-2 ring-offset-background"
-                  : "hover:scale-105"
-              }`}
-              title={color.label}
-            >
-              {accentColor === color.id && <Check className="h-5 w-5 text-white" />}
-            </button>
-          ))}
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold tracking-tight text-balance">Aparencia</h1>
+          <p className="mt-1 text-muted-foreground">Personalize a aparencia do PulseDesk.</p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Tema ativo agora: {theme === "system" ? `Sistema (${resolvedTheme === "dark" ? "escuro" : "claro"})` : theme === "dark" ? "Escuro" : "Claro"}
+          </p>
         </div>
-      </PageSection>
 
-      <PageSection title="Densidade da sidebar">
-        <RadioGroup value={sidebarDensity} onValueChange={setSidebarDensity} className="space-y-2">
-          <div className="flex items-center space-x-3">
-            <RadioGroupItem value="compact" id="compact" />
-            <Label htmlFor="compact" className="cursor-pointer">
-              <span className="font-medium">Compacta</span>
-              <p className="text-xs text-muted-foreground">Menos espacamento, mais itens visiveis</p>
-            </Label>
-          </div>
-          <div className="flex items-center space-x-3">
-            <RadioGroupItem value="comfortable" id="comfortable" />
-            <Label htmlFor="comfortable" className="cursor-pointer">
-              <span className="font-medium">Confortavel</span>
-              <p className="text-xs text-muted-foreground">Espacamento padrao</p>
-            </Label>
-          </div>
-        </RadioGroup>
-      </PageSection>
+        <div className="space-y-6">
+          <PageSection title="Tema">
+            <RadioGroup value={theme} onValueChange={setTheme} className="grid grid-cols-3 gap-4">
+              {themes.map((item) => (
+                <Label
+                  key={item.id}
+                  htmlFor={item.id}
+                  className={`flex cursor-pointer flex-col items-center gap-3 rounded-lg border p-4 transition-colors ${
+                    theme === item.id
+                      ? "border-primary bg-accent/20 text-foreground shadow-[0_0_0_1px_var(--color-primary)]"
+                      : "border-border bg-card hover:border-primary/40 hover:bg-muted/40"
+                  }`}
+                >
+                  <RadioGroupItem value={item.id} id={item.id} className="sr-only" />
+                  <div className={`rounded-full p-3 ${theme === item.id ? "bg-background" : "bg-secondary"}`}>
+                    <item.icon className="h-6 w-6" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-medium">{item.label}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{item.description}</p>
+                  </div>
+                </Label>
+              ))}
+            </RadioGroup>
+          </PageSection>
 
-      <Button onClick={handleSave} disabled={isSaving || !hasChanges}>
-        {isSaving ? <Spinner className="h-4 w-4" /> : hasChanges ? "Salvar preferencias" : "Preferencias atualizadas"}
-      </Button>
-      </div>
+          <PageSection title="Cor de destaque">
+            <div className="flex items-center gap-3">
+              {accentColors.map((color) => (
+                <button
+                  type="button"
+                  key={color.id}
+                  onClick={() => setAccentColor(color.id)}
+                  className={`flex h-10 w-10 items-center justify-center rounded-full ${color.color} transition-transform ${
+                    accentColor === color.id
+                      ? "scale-110 ring-2 ring-[color:var(--primary)] ring-offset-2 ring-offset-background"
+                      : "hover:scale-105"
+                  }`}
+                  title={color.label}
+                >
+                  {accentColor === color.id && <Check className="h-5 w-5 text-white" />}
+                </button>
+              ))}
+            </div>
+          </PageSection>
+
+          <Button onClick={handleSave} disabled={isSaving || !hasChanges}>
+            {isSaving ? <Spinner className="h-4 w-4" /> : hasChanges ? "Salvar preferencias" : "Preferencias atualizadas"}
+          </Button>
+        </div>
       </div>
     </PageContent>
   )

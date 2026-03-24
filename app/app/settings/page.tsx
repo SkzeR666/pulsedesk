@@ -13,8 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
 import { Spinner } from "@/components/ui/spinner"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useApp } from "@/lib/app-context"
 import { Building2, Upload } from "lucide-react"
 
@@ -144,177 +144,194 @@ export default function SettingsPage() {
   return (
     <div className="min-h-dvh bg-background">
       <div className="mx-auto w-full max-w-3xl px-4 py-6 md:px-6 md:py-8">
-      <input
-        ref={avatarInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleAvatarChange}
-      />
-      <input
-        ref={logoInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleLogoChange}
-      />
+        <input
+          ref={avatarInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleAvatarChange}
+        />
+        <input
+          ref={logoInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleLogoChange}
+        />
 
-      <div className="mb-8">
-        <h1 className="text-balance text-2xl font-semibold tracking-tight">Configurações</h1>
-        <p className="mt-1 text-pretty text-sm text-muted-foreground">
-          Gerencie seu perfil e, se voce for admin, as configuracoes do workspace.
-        </p>
-      </div>
-
-      {error && (
-        <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
+        <div className="mb-8">
+          <h1 className="text-balance text-2xl font-semibold tracking-tight">Configuracoes</h1>
+          <p className="mt-1 text-pretty text-sm text-muted-foreground">
+            Gerencie seu perfil e, se voce for admin, as configuracoes do workspace.
+          </p>
         </div>
-      )}
 
-      <section className="mb-10">
-        <h2 className="text-base font-semibold">Workspace</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Nome, descrição e identidade visual do seu workspace.
-        </p>
+        {error && (
+          <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
 
-        <form className="mt-4 space-y-6 rounded-lg border border-border bg-card p-4 md:p-6" onSubmit={handleWorkspaceSubmit}>
-          <div className="flex items-start gap-4">
-            {workspace.logoUrl ? (
-              <img
-                src={workspace.logoUrl}
-                alt={workspace.name}
-                className="h-16 w-16 rounded-md border border-border object-cover shrink-0"
-              />
-            ) : (
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-secondary">
-                <Building2 className="h-8 w-8 text-muted-foreground" />
-              </div>
-            )}
-            <div>
-              <Button
-                variant="outline"
-                size="sm"
-                type="button"
-                disabled={!canManageWorkspace || isSavingWorkspace}
-                onClick={() => logoInputRef.current?.click()}
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                {isSavingWorkspace ? "Enviando logo..." : "Alterar logo"}
-              </Button>
-              <p className="text-xs text-muted-foreground mt-2">
-                Use uma imagem quadrada para o workspace ficar mais consistente no app.
+        <Tabs defaultValue={canManageWorkspace ? "workspace" : "profile"} className="space-y-5">
+          <TabsList className="h-auto w-full justify-start rounded-xl bg-muted/60 p-1">
+            {canManageWorkspace ? (
+              <TabsTrigger value="workspace" className="min-w-32 px-4 py-2">
+                Workspace
+              </TabsTrigger>
+            ) : null}
+            <TabsTrigger value="profile" className="min-w-32 px-4 py-2">
+              Seu perfil
+            </TabsTrigger>
+          </TabsList>
+
+          {canManageWorkspace ? (
+            <TabsContent value="workspace">
+              <section className="mb-2">
+                <h2 className="text-base font-semibold">Workspace</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Nome, descricao e identidade visual do seu workspace.
+                </p>
+
+                <form className="mt-4 space-y-6 rounded-lg border border-border bg-card p-4 md:p-6" onSubmit={handleWorkspaceSubmit}>
+                  <div className="flex items-start gap-4">
+                    {workspace.logoUrl ? (
+                      <img
+                        src={workspace.logoUrl}
+                        alt={workspace.name}
+                        className="h-16 w-16 shrink-0 rounded-md border border-border object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-secondary">
+                        <Building2 className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        type="button"
+                        disabled={!canManageWorkspace || isSavingWorkspace}
+                        onClick={() => logoInputRef.current?.click()}
+                      >
+                        <Upload className="mr-2 h-4 w-4" />
+                        {isSavingWorkspace ? "Enviando logo..." : "Alterar logo"}
+                      </Button>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Use uma imagem quadrada para o workspace ficar mais consistente no app.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="workspace-name">Nome do workspace</Label>
+                    <Input
+                      id="workspace-name"
+                      value={workspaceName}
+                      onChange={(e) => setWorkspaceName(e.target.value)}
+                      disabled={!canManageWorkspace}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="workspace-description">Descricao</Label>
+                    <Textarea
+                      id="workspace-description"
+                      value={workspaceDescription}
+                      onChange={(e) => setWorkspaceDescription(e.target.value)}
+                      rows={3}
+                      disabled={!canManageWorkspace}
+                    />
+                  </div>
+
+                  <Button className="h-10" disabled={isSavingWorkspace || !canManageWorkspace}>
+                    {canManageWorkspace
+                      ? isSavingWorkspace
+                        ? <Spinner className="h-4 w-4" />
+                        : "Salvar alteracoes"
+                      : "Sem permissao para editar o workspace"}
+                  </Button>
+                </form>
+              </section>
+            </TabsContent>
+          ) : null}
+
+          <TabsContent value="profile">
+            <section className="mb-2">
+              <h2 className="text-base font-semibold">Seu perfil</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Atualize suas informacoes pessoais e preferencias basicas.
               </p>
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="workspace-name">Nome do workspace</Label>
-            <Input
-              id="workspace-name"
-              value={workspaceName}
-              onChange={(e) => setWorkspaceName(e.target.value)}
-              disabled={!canManageWorkspace}
-            />
-          </div>
+              <form className="mt-4 space-y-6 rounded-lg border border-border bg-card p-4 md:p-6" onSubmit={handleProfileSubmit}>
+                <div className="flex items-start gap-4">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage src={user.avatar} alt={user.name} />
+                    <AvatarFallback className="text-xl">{user.name[0]}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      disabled={isUploadingAvatar}
+                      onClick={() => avatarInputRef.current?.click()}
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      {isUploadingAvatar ? "Enviando foto..." : "Alterar foto"}
+                    </Button>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Envie JPG, PNG ou WEBP para atualizar seu avatar.
+                    </p>
+                  </div>
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="workspace-description">Descricao</Label>
-            <Textarea
-              id="workspace-description"
-              value={workspaceDescription}
-              onChange={(e) => setWorkspaceDescription(e.target.value)}
-              rows={3}
-              disabled={!canManageWorkspace}
-            />
-          </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="display-name">Nome de exibicao</Label>
+                    <Input
+                      id="display-name"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  </div>
+                </div>
 
-          <Button className="h-10" disabled={isSavingWorkspace || !canManageWorkspace}>
-            {canManageWorkspace
-              ? isSavingWorkspace
-                ? <Spinner className="h-4 w-4" />
-                : "Salvar alteracoes"
-              : "Sem permissao para editar o workspace"}
-          </Button>
-        </form>
-      </section>
+                <div className="space-y-2">
+                  <Label>Setor</Label>
+                  <Select value={teamId} onValueChange={setTeamId}>
+                    <SelectTrigger className="h-11 w-full">
+                      <SelectValue placeholder="Sem setor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sem setor</SelectItem>
+                      {teams.map((team) => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Seu proprio setor pode ser atualizado aqui sem sair do perfil.
+                  </p>
+                </div>
 
-      <Separator className="my-8" />
+                <div className="space-y-2">
+                  <Label>Funcao</Label>
+                  <Input value={user.role === "admin" ? "Administrador" : "Membro"} disabled />
+                </div>
 
-      <section className="mb-10">
-        <h2 className="text-base font-semibold">Seu perfil</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Atualize suas informações pessoais e preferências básicas.
-        </p>
-
-        <form className="mt-4 space-y-6 rounded-lg border border-border bg-card p-4 md:p-6" onSubmit={handleProfileSubmit}>
-          <div className="flex items-start gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback className="text-xl">{user.name[0]}</AvatarFallback>
-            </Avatar>
-            <div>
-              <Button
-                variant="outline"
-                size="sm"
-                type="button"
-                disabled={isUploadingAvatar}
-                onClick={() => avatarInputRef.current?.click()}
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                {isUploadingAvatar ? "Enviando foto..." : "Alterar foto"}
-              </Button>
-              <p className="text-xs text-muted-foreground mt-2">
-                Envie JPG, PNG ou WEBP para atualizar seu avatar.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="display-name">Nome de exibicao</Label>
-              <Input
-                id="display-name"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Setor</Label>
-            <Select value={teamId} onValueChange={setTeamId}>
-              <SelectTrigger className="h-11 w-full">
-                <SelectValue placeholder="Sem setor" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Sem setor</SelectItem>
-                {teams.map((team) => (
-                  <SelectItem key={team.id} value={team.id}>
-                    {team.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Seu proprio setor pode ser atualizado aqui sem sair do perfil.
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Funcao</Label>
-            <Input value={user.role === "admin" ? "Administrador" : "Membro"} disabled />
-          </div>
-
-          <Button disabled={isSavingProfile}>
-            {isSavingProfile ? <Spinner className="h-4 w-4" /> : "Salvar alteracoes"}
-          </Button>
-        </form>
-      </section>
+                <Button disabled={isSavingProfile}>
+                  {isSavingProfile ? <Spinner className="h-4 w-4" /> : "Salvar alteracoes"}
+                </Button>
+              </form>
+            </section>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

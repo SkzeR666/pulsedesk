@@ -6,7 +6,6 @@ import { useApp } from "@/lib/app-context"
 import {
   Bell,
   Building2,
-  CreditCard,
   Palette,
   Settings,
   Shield,
@@ -15,12 +14,11 @@ import {
 
 const settingsNav = [
   { icon: Settings, label: "Geral", href: "/app/settings", category: "Conta" },
-  { icon: Palette, label: "Aparência", href: "/app/settings/appearance", category: "Conta" },
-  { icon: Bell, label: "Notificações", href: "/app/settings/notifications", category: "Conta" },
+  { icon: Palette, label: "Aparencia", href: "/app/settings/appearance", category: "Conta" },
+  { icon: Bell, label: "Notificacoes", href: "/app/settings/notifications", category: "Conta" },
   { icon: Users, label: "Membros", href: "/app/settings/members", permission: "manageMembers" as const, category: "Workspace" },
   { icon: Building2, label: "Setores", href: "/app/settings/teams", permission: "manageMembers" as const, category: "Workspace" },
-  { icon: Shield, label: "Permissões", href: "/app/settings/permissions", permission: "manageSettings" as const, category: "Workspace" },
-  { icon: CreditCard, label: "Faturamento", href: "/app/settings/billing", permission: "manageSettings" as const, category: "Workspace" },
+  { icon: Shield, label: "Permissoes", href: "/app/settings/permissions", permission: "manageSettings" as const, category: "Workspace" },
 ]
 
 export default function SettingsLayout({
@@ -40,8 +38,8 @@ export default function SettingsLayout({
     <div className="flex h-full">
       <div className="w-64 shrink-0 border-r border-border bg-background p-4">
         <div className="mb-5 px-3">
-          <h2 className="text-base font-semibold">Configurações</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Ajustes da conta e operação do workspace.</p>
+          <h2 className="text-base font-semibold">Configuracoes</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Ajustes da conta e operacao do workspace.</p>
         </div>
         <nav className="space-y-5">
           {groups.map((group) => (
