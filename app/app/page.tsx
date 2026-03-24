@@ -8,6 +8,13 @@ import { RequestDetail } from "@/components/app/request-detail"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { NewViewModal } from "@/components/app/new-view-modal"
 import {
   AlertDialog,
@@ -279,24 +286,21 @@ export default function InboxPage() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-3">
-                <div className="flex flex-wrap gap-2">
-                  {([{ value: "all", label: "Todos" }, ...teams.map((team) => ({ value: team.id, label: team.name }))] as const).map((item) => (
-                    <Button
-                      key={item.value}
-                      type="button"
-                      variant={teamFilter === item.value ? "secondary" : "ghost"}
-                      size="sm"
-                      className={cn(
-                        "h-8 rounded-lg px-3",
-                        teamFilter === item.value
-                          ? "bg-muted text-foreground"
-                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                      )}
-                      onClick={() => setTeamFilter(item.value)}
-                    >
-                      {item.label}
-                    </Button>
-                  ))}
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <span className="shrink-0 text-xs font-medium text-muted-foreground">Setor:</span>
+                  <Select value={teamFilter} onValueChange={(value) => setTeamFilter(value)}>
+                    <SelectTrigger className="h-8 max-w-[210px] rounded-lg">
+                      <SelectValue placeholder="Todos os setores" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os setores</SelectItem>
+                      {teams.map((team) => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 {teamFilter !== "all" || statusFilter !== "all" || searchQuery ? (
                   <Button type="button" variant="ghost" size="sm" className="h-8 shrink-0 px-2.5 text-xs" onClick={clearFilters}>
@@ -305,10 +309,8 @@ export default function InboxPage() {
                 ) : null}
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                <span className="flex h-8 items-center px-1 text-xs font-medium text-muted-foreground">
-                  Estados:
-                </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="shrink-0 px-1 text-xs font-medium text-muted-foreground">Estados:</span>
                 {([
                   { value: "all", label: "Todos" },
                   { value: "open", label: "Abertos" },
